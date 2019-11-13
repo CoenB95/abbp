@@ -1,0 +1,4 @@
+<launch>
+  <!-- ABBP Robot Program -->
+  <node pkg="abbp_robot" type="abbp_robot_node" name="abbp_robot_node" output="screen"/>
+</launch>
