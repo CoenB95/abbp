@@ -14,5 +14,3 @@
     <arg name="config" value="true"/>
   </include>
 </launch>
-
-roslaunch ur_bringup ur5_bringup.launch robot_ip:=IP_OF_THE_ROBOT
