@@ -1,3 +1,6 @@
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 #include "abbp_robot_node.h"
 
 namespace rvt = rviz_visual_tools;
@@ -39,11 +42,17 @@ Roscovery::Roscovery() {
   addFloor();
 
   geometry_msgs::Pose target_pose1;
-  target_pose1.orientation.w = 1.0;
-  target_pose1.position.x = 0.28;
-  target_pose1.position.y = -0.2;
-  target_pose1.position.z = 0.5;
+  target_pose1.position.x = -0.614;
+  target_pose1.position.y = 0.051;
+  target_pose1.position.z = 0.250;
+
+  tf2::Quaternion quat;
+  quat.setEuler(M_PI, 0, 0);
+  tf2::convert(quat, target_pose1.orientation);
+
   moveGroup->setPoseTarget(target_pose1);
+  moveGroup->setMaxVelocityScalingFactor(0.1);
+  moveGroup->setNumPlanningAttempts(5);
 
   ROS_INFO("Visualizing target pose");
   visualTools->deleteAllMarkers();
