@@ -1,0 +1,35 @@
+<launch>
+  <arg name="driver" default="false"/>
+  <arg name="planner" default="false"/>
+  <arg name="limited" default="false"/>
+  <arg name="simulated" default="false"/>
+
+  <!-- Simulated UR5 Robot (Gazebo) -->
+  <group if="$(eval arg('driver') and arg('simulated'))">
+    <include file="$(find ur_gazebo)/launch/ur5.launch">
+      <arg name="limited" value="$(arg limited)"/>
+    </include>
+  </group>
+
+  <!-- Real UR5 Robot -->
+  <group if="$(eval arg('driver') and not arg('simulated'))">
+    <include file="$(find ur_bringup)/launch/ur5_bringup.launch">
+      <arg name="robot_ip" value="172.22.22.2"/>
+      <arg name="limited" value="$(arg limited)"/>
+    </include>
+  </group>
+
+  <group if="$(arg planner)">
+    <!-- MoveIT Planner for UR5 -->
+    <include file="$(find ur5_moveit_config)/launch/ur5_moveit_planning_execution.launch">
+      <arg name="sim" value="true"/>
+      <arg name="limited" value="$(arg limited)"/>
+    </include>
+
+    <!-- MoveIT Planner for UR5 Visualization (RViz) -->
+    <include file="$(find ur5_moveit_config)/launch/moveit_rviz.launch">
+      <arg name="config" value="true"/>
+    </include>
+  </group>
+
+</launch>
