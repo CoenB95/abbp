@@ -24,6 +24,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "coco.h5") 
 
+
 # CONFIGURATION 
 class ABBPConfig(Config):
     """Configuration for training on the toy  dataset.
@@ -88,25 +89,17 @@ class ABBPDataset(utils.Dataset):
 
         # Convert polygons to a bitmap mask of shape
         # [height, width, instance_count]
-        info = next(filter(lambda x: x['id'] == image_id, self.image_info))
+        info = self.image_info[image_id]
+        # info = next(filter(lambda x: x['id'] == image_id, self.image_info))
         
         mask = np.zeros([info["height"], info["width"], 1], dtype=np.uint8)
         rr, cc = skimage.draw.polygon(info["polygon"][0], info["polygon"][1])
 
-        mask[rr, cc, 0] = 1
-        #for i, p in enumerate(info["polygon"]):
-         #   # Get indexes of pixels inside the polygon and set them to 1
-          #  rr, cc = skimage.draw.polygon(p[0], p[1])
-           # mask[rr, cc, i] = 1
+        mask[cc, rr, 0] = 1
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
-        # print(np.ones([mask.shape[-1]], dtype=np.int32))
-        # print(mask.shape)
-        # print(mask.shape[-1])
-        bool_arr = mask.astype(np.bool)
-        print(bool_arr.shape)
-        return mask.astype(np.bool), [info['class_id']]
+        return mask.astype(np.bool), np.array([info['class_id']])
 
     def image_reference(self, image_id):
         info = next(filter(lambda x: x['id'] == image_id, self.image_info))
@@ -144,10 +137,16 @@ def tests():
     info = dataset.image_info[0]
 
     print(info['id'])
+    mask, class_ids = dataset.load_mask(5)
 
-    mask = dataset.load_mask(info['id'])
+    _idx = np.sum(mask, axis=(0, 1)) > 0
+    mask = mask[:, :, _idx]
+    class_ids = class_ids[_idx]
 
-    print(mask)
+    cv2.imshow('mask', np.array(mask * 255, dtype=np.uint8))
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 def main():
@@ -235,4 +234,4 @@ def main():
     train(model)
 
 
-tests()
+main()

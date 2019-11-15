@@ -6,3 +6,4 @@ masks/
 coco.h5
 val_images/
 logs/
+mrcnn/__pycache__/
