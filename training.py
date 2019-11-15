@@ -37,7 +37,7 @@ class ABBPConfig(Config):
     IMAGES_PER_GPU = 1
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 1  # Background + balloon 
+    NUM_CLASSES = 1 + 6  # Background + balloon
     # Number of training steps per epoch
     STEPS_PER_EPOCH = 100
 
@@ -53,7 +53,12 @@ class ABBPDataset(utils.Dataset):
         subset: Subset to load: train or val
         """
         # Add classes. 6 Objects to be detected so 6 classes.
+        self.add_class("ABBP", 1, "one")
+        self.add_class("ABBP", 2, "two")
+        self.add_class("ABBP", 3, "three")
         self.add_class("ABBP", 4, "four")
+        self.add_class("ABBP", 5, "five")
+        self.add_class("ABBP", 6, "six")
 
         # Train or validation dataset?
         # assert subset in ["train", "val"]
