@@ -110,9 +110,7 @@ class ABBPDataset(utils.Dataset):
         return mask.astype(np.bool), np.array([info['class_id']])
 
     def image_reference(self, image_id):
-        info = next(filter(lambda x: x['id'] == image_id, self.image_info))
-
-        return info['path']
+        return self.image_info[image_id]
 
 
 def train(model):

@@ -3,7 +3,8 @@
 .ipynb_checkpoints/
 images/
 masks/
-coco.h5
 val_images/
 logs/
-mrcnn/__pycache__/
+**/__pycache__/
+*.h5
+test_images/
