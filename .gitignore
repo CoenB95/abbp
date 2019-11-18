@@ -8,3 +8,4 @@ logs/
 **/__pycache__/
 *.h5
 test_images/
+*.so
