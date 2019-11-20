@@ -57,5 +57,5 @@ add line `source $ROS_WS/devel/setup.bash`
   If it all goes without errors, you should be able to find the pyrealsense2.<arch info>.so under build/wrappers/python (actually 3 files with the same name and extensions .so, .so.2, .so.2.8.1). Now the easiest way to use it is run python from that folder and import pyrealsense2 or extract the .so files to the root of your files.  
 
 ## ABBP
-**`cd $ROS_WS`**  
+**`cd $ROS_WS/src`**  
 `git clone https://github.com/telbir/abbp.git`  
