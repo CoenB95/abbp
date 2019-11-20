@@ -24,15 +24,18 @@ in $HOME/.bashrc:
 `catkin_make install`  
 # Vision (aanvullen)
 ## Windows:
+- Install shapely via conda because PyPi does not have shapely
+`conda install -c conda-forge shapely`
 - Install all dependencies
 `pip install -r requirements.txt`
 
 ## UNIX / Linux
+- Install shapely via conda because PyPi does not have shapely
+`conda install -c conda-forge shapely`
 - Install all dependencies
 `pip install -r requirements.txt`
 
 - The pyrealsense2 library needs to built with the source files 
-`1. Install pyrealsense2 library`
 
 `1. git clone https://github.com/IntelRealSense/librealsense`
 
@@ -48,7 +51,7 @@ in $HOME/.bashrc:
 
 `7. sudo make install #Optional if you want the library to be installed in your system`
 
-`9 - If it all goes without errors, you should be able to find the pyrealsense2.<arch info>.so under build/wrappers/python (actually 3 files with the same name and extensions .so, .so.2, .so.2.8.1). Now the easiest way to use it is run python from that folder and import pyrealsense2 or extract the .so files to the root of your files.`
+`8 - If it all goes without errors, you should be able to find the pyrealsense2.<arch info>.so under build/wrappers/python (actually 3 files with the same name and extensions .so, .so.2, .so.2.8.1). Now the easiest way to use it is run python from that folder and import pyrealsense2 or extract the .so files to the root of your files.`
 
 
 ### Robot
