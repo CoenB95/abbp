@@ -39,9 +39,7 @@ add line `source $ROS_WS/devel/setup.bash`
 `conda install -c conda-forge shapely`  
 - Install all dependencies:  
 `pip install -r requirements.txt`  
-- Download Intel Realsense drivers:  
-https://downloadcenter.intel.com/product/128256/Intel-RealSense-Depth-Camera-D415  
-
+- Download [Intel Realsense drivers](https://downloadcenter.intel.com/product/128256/Intel-RealSense-Depth-Camera-D415)  
 ### UNIX / Linux
 - Install shapely via conda because PyPi does not have shapely:  
 `conda install -c conda-forge shapely`  
@@ -57,3 +55,4 @@ https://downloadcenter.intel.com/product/128256/Intel-RealSense-Depth-Camera-D41
     6. `make -j4`  
     7. `sudo make install #Optional if you want the library to be installed in your system`  
     8  `If it all goes without errors, you should be able to find the pyrealsense2.<arch info>.so under build/wrappers/python (actually 3 files with the same name and extensions .so, .so.2, .so.2.8.1). Now the easiest way to use it is run python from that folder and import pyrealsense2 or extract the .so files to the root of your files.`  
+
