@@ -30,10 +30,10 @@ in $HOME/.bashrc:
 ## Windows
 - Install shapely via conda because PyPi does not have shapely:
 
-`conda install -c conda-forge shapely`
+    `conda install -c conda-forge shapely`
 - Install all dependencies:
 
-`pip install -r requirements.txt`
+    `pip install -r requirements.txt`
 - Download Intel Realsense drivers:
 
 https://downloadcenter.intel.com/product/128256/Intel-RealSense-Depth-Camera-D415
@@ -41,10 +41,10 @@ https://downloadcenter.intel.com/product/128256/Intel-RealSense-Depth-Camera-D41
 ## UNIX / Linux
 - Install shapely via conda because PyPi does not have shapely
 
-`conda install -c conda-forge shapely`
+    `conda install -c conda-forge shapely`
 - Install all dependencies:
 
-`pip install -r requirements.txt`
+    `pip install -r requirements.txt`
 
 - The pyrealsense2 library needs to built with the source files 
 
