@@ -55,8 +55,9 @@ https://downloadcenter.intel.com/product/128256/Intel-RealSense-Depth-Camera-D41
     `3. mkdir build`
 
     `4. cd build`
-
-###### Note: To force compilation with a specific version on a system with both Python 2 and Python 3 installed, add the following flag to CMake command: -DPYTHON_EXECUTABLE=[full path to the exact python executable]
+    
+    
+    ###### Note: To force compilation with a specific version on a system with both Python 2 and Python 3 installed, add the following flag to CMake command: -DPYTHON_EXECUTABLE=[full path to the exact python executable] 
 
     `5. cmake ../ -DBUILD_PYTHON_BINDINGS=TRUE`
 
