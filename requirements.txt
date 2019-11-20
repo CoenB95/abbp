@@ -11,4 +11,5 @@ keras>=2.2.5
 opencv-python
 h5py
 imgaug
+python-pcl
 IPython[all]
