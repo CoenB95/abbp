@@ -10,37 +10,23 @@ import numpy as np
 import cv2
 
 import os
-import sys
-import random
-import math
-import re
-import time
 import tensorflow as tf
-import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import time
-import skimage.io
 
 # Import Mask RCNN
-from mrcnn import utils
 from mrcnn import visualize
-from mrcnn.visualize import display_images
 import mrcnn.model as modellib
-from mrcnn.model import log
 
 import training
 
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
-# Path to Ballon trained weights
-# You can download this file from the Releases page
-# https://github.com/matterport/Mask_RCNN/releases
+# Path to Objects trained weights
 OBJECT_WEIGHTS_PATH = "mask_rcnn_abbp_0030.h5"
 
 config = training.ABBPConfig()
-IMAGES_DIR = os.path.join(ROOT_DIR, "test_images")
 
 
 # Override the training configurations with a few
@@ -50,6 +36,7 @@ class InferenceConfig(config.__class__):
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
 
+
 config = InferenceConfig()
 config.display()
 
@@ -58,11 +45,6 @@ config.display()
 # machine, in which case use CPU and leave the
 # GPU for training.
 DEVICE = "/cpu:0"  # /cpu:0 or /gpu:0
-
-# Inspect the model in training or inference modes
-# values: 'inference' or 'training'
-# TODO: code for 'training' test mode not ready yet
-TEST_MODE = "inference"
 
 
 def get_ax(rows=1, cols=1, size=16):
@@ -120,11 +102,9 @@ while True:
     r = results[0]
     print(r['class_ids'])
     image = visualize.display_instances(color_image, r['rois'], r['masks'], r['class_ids'],
-                                class_names, r['scores'], ax=ax,
-                                title="Predictions")
+                                        class_names, r['scores'], ax=ax, title="Predictions")
 
     images = np.hstack((color_image, image))
-
 
     # Show images
     cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)

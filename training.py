@@ -1,19 +1,14 @@
 import sys
 import os
+import numpy as np
+import skimage.io
+import json
 
 ROOT_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/abbp'
 sys.path.insert(0, ROOT_DIR)
 
-import random
-import math
-import numpy as np
-import skimage.io
-import json
-import h5py
-import cv2
-
 from mrcnn.config import Config
-from mrcnn import model as modellib, utils
+from mrcnn import utils
 
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
@@ -27,7 +22,7 @@ COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "coco.h5")
 
 # CONFIGURATION 
 class ABBPConfig(Config):
-    """Configuration for training on the toy  dataset.
+    """Configuration for training on the objects dataset.
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
@@ -51,7 +46,7 @@ class ABBPConfig(Config):
 # Dataset class ABBPDataset(utils.Dataset):
 class ABBPDataset(utils.Dataset):
     def load_object(self, dataset_dir):
-        """Load a subset of the Balloon dataset.
+        """Load a subset of the Objects dataset.
         dataset_dir: Root directory of the dataset.
         subset: Subset to load: train or val
         """
@@ -62,10 +57,6 @@ class ABBPDataset(utils.Dataset):
         self.add_class("ABBP", 4, "four")
         self.add_class("ABBP", 5, "five")
         self.add_class("ABBP", 6, "six")
-
-        # Train or validation dataset?
-        # assert subset in ["train", "val"]
-        # dataset_dir = os.path.join(dataset_dir, subset)
 
         # Load annotations
         annotations = json.load(open(os.path.join(dataset_dir, "annotations.json")))
@@ -125,123 +116,11 @@ def train(model):
     dataset_val.load_object("val_images")
     dataset_val.prepare()
 
-    # *** This training schedule is an example. Update to your needs ***
     # Since we're using a very small dataset, and starting from
     # COCO trained weights, we don't need to train too long. Also,
     # no need to train all layers, just the heads should do it.
     print("Training network heads")
     model.train(dataset_train, dataset_val,
-                learning_rate=.7,
+                learning_rate=0.001,
                 epochs=30,
                 layers='heads')
-
-
-# def tests():
-#     dataset = ABBPDataset()
-#     dataset.load_object("images")
-#
-#     info = dataset.image_info[0]
-#
-#     print(info['id'])
-#     mask, class_ids = dataset.load_mask(5)
-#
-#     _idx = np.sum(mask, axis=(0, 1)) > 0
-#     mask = mask[:, :, _idx]
-#     class_ids = class_ids[_idx]
-#
-#     cv2.imshow('mask', np.array(mask * 255, dtype=np.uint8))
-#
-#     cv2.waitKey(0)
-#     cv2.destroyAllWindows()
-#
-#
-# def main():
-#     import tensorflow as tf
-#     print("doe het")
-#     print("TEST: " + str(tf.test.gpu_device_name()))
-#
-#     import argparse
-#
-#     # Parse command line arguments
-#     parser = argparse.ArgumentParser(
-#         description='Train Mask R-CNN to detect objects.')
-#     parser.add_argument("command",
-#                         metavar="<command>",
-#                         help="'train' or 'splash'")
-#     parser.add_argument('--dataset', required=False,
-#                         metavar="/path/to/balloon/dataset/",
-#                         help='Directory of the Balloon dataset')
-#     parser.add_argument('--weights', required=True,
-#                         metavar="/path/to/weights.h5",
-#                         help="Path to weights .h5 file or 'coco'")
-#     parser.add_argument('--logs', required=False,
-#                         default=DEFAULT_LOGS_DIR,
-#                         metavar="/path/to/logs/",
-#                         help='Logs and checkpoints directory (default=logs/)')
-#     parser.add_argument('--image', required=False,
-#                         metavar="path or URL to image",
-#                         help='Image to apply the color splash effect on')
-#     parser.add_argument('--video', required=False,
-#                         metavar="path or URL to video",
-#                         help='Video to apply the color splash effect on')
-#     args = parser.parse_args()
-#
-#     # Validate arguments
-#     if args.command == "train":
-#         assert args.dataset, "Argument --dataset is required for training"
-#     elif args.command == "splash":
-#         assert args.image or args.video, \
-#             "Provide --image or --video to apply color splash"
-#
-#     print("Weights: ", args.weights)
-#     print("Dataset: ", args.dataset)
-#     print("Logs: ", args.logs)
-#
-#     # Configurations
-#     if args.command == "train":
-#         config = ABBPConfig()
-#     else:
-#         class InferenceConfig(ABBPConfig):
-#             # Set batch size to 1 since we'll be running inference on
-#             # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
-#             GPU_COUNT = 1
-#             IMAGES_PER_GPU = 1
-#
-#         config = InferenceConfig()
-#     config.display()
-#
-#     # Create model
-#     if args.command == "train":
-#         model = modellib.MaskRCNN(mode="training", config=config,
-#                                   model_dir=args.logs)
-#     else:
-#         model = modellib.MaskRCNN(mode="inference", config=config,
-#                                   model_dir=args.logs)
-#
-#     # Select weights file to load
-#     if args.weights.lower() == "coco":
-#         weights_path = COCO_WEIGHTS_PATH
-#         # Download weights file
-#         if not os.path.exists(weights_path):
-#             utils.download_trained_weights(weights_path)
-#     elif args.weights.lower() == "last":
-#         # Find last trained weights
-#         weights_path = model.find_last()
-#     elif args.weights.lower() == "imagenet":
-#         # Start from ImageNet trained weights
-#         weights_path = model.get_imagenet_weights()
-#     else:
-#         weights_path = args.weights
-#
-#     # Load weights
-#     print("Loading weights ", weights_path)
-#
-#     # number of classes
-#     model.load_weights(weights_path, by_name=True, exclude=[
-#         "mrcnn_class_logits", "mrcnn_bbox_fc",
-#         "mrcnn_bbox", "mrcnn_mask"])
-#     # Train or evaluate
-#     train(model)
-#
-#
-# main()
