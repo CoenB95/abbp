@@ -23,36 +23,48 @@ in $HOME/.bashrc:
 `cd $ROS_WS`  
 `catkin_make install`  
 # Vision (aanvullen)
-## Windows:
-- Install shapely via conda because PyPi does not have shapely
+<b> Requirements: </b>
+- Python >3.6.9
+- Tensorflow =1.15.0
+- Keras =2.2.5
+## Windows
+- Install shapely via conda because PyPi does not have shapely:
+
 `conda install -c conda-forge shapely`
-- Install all dependencies
+- Install all dependencies:
+
 `pip install -r requirements.txt`
+- Download Intel Realsense drivers:
+
+https://downloadcenter.intel.com/product/128256/Intel-RealSense-Depth-Camera-D415
 
 ## UNIX / Linux
 - Install shapely via conda because PyPi does not have shapely
+
 `conda install -c conda-forge shapely`
-- Install all dependencies
+- Install all dependencies:
+
 `pip install -r requirements.txt`
 
 - The pyrealsense2 library needs to built with the source files 
 
-`1. git clone https://github.com/IntelRealSense/librealsense`
+    `1. git clone https://github.com/IntelRealSense/librealsense`
 
-`2. cd librealsense`
+    `2. cd librealsense`
 
-`3. mkdir build`
+    `3. mkdir build`
 
-`4. cd build`
+    `4. cd build`
 
-`5. cmake ../ -DBUILD_PYTHON_BINDINGS=TRUE`
+###### Note: To force compilation with a specific version on a system with both Python 2 and Python 3 installed, add the following flag to CMake command: -DPYTHON_EXECUTABLE=[full path to the exact python executable]
 
-`6. make -j4`
+    `5. cmake ../ -DBUILD_PYTHON_BINDINGS=TRUE`
 
-`7. sudo make install #Optional if you want the library to be installed in your system`
+    `6. make -j4`
 
-`8 - If it all goes without errors, you should be able to find the pyrealsense2.<arch info>.so under build/wrappers/python (actually 3 files with the same name and extensions .so, .so.2, .so.2.8.1). Now the easiest way to use it is run python from that folder and import pyrealsense2 or extract the .so files to the root of your files.`
+    `7. sudo make install #Optional if you want the library to be installed in your system`
 
+    `8 - If it all goes without errors, you should be able to find the pyrealsense2.<arch info>.so under build/wrappers/python (actually 3 files with the same name and extensions .so, .so.2, .so.2.8.1). Now the easiest way to use it is run python from that folder and import pyrealsense2 or extract the .so files to the root of your files.`
 
 ### Robot
 Todo
