@@ -29,7 +29,7 @@ add line `source $ROS_WS/devel/setup.bash`
 `git clone https://github.com/IntelRealSense/realsense-ros.git`  
 **`cd $ROS_WS`**  
 `catkin_make install`  
-## Vision (aanvullen)
+## Vision
 **Requirements:**
 - Python >3.6.9
 - Tensorflow =1.15.0
@@ -46,13 +46,12 @@ add line `source $ROS_WS/devel/setup.bash`
 - Install all dependencies:  
 `pip install -r requirements.txt`  
 - The pyrealsense2 library needs to built with the source files:  
-    1. `git clone https://github.com/IntelRealSense/librealsense`  
-    2. `cd librealsense`  
-    3. `mkdir build`  
-    4. `cd build`  
-###### Note: To force compilation with a specific version on a system with both Python 2 and Python 3 installed, add the following flag to CMake command: -DPYTHON_EXECUTABLE=[full path to the exact python executable]  
-    5. `cmake ../ -DBUILD_PYTHON_BINDINGS=TRUE`  
-    6. `make -j4`  
-    7. `sudo make install #Optional if you want the library to be installed in your system`  
-    8  `If it all goes without errors, you should be able to find the pyrealsense2.<arch info>.so under build/wrappers/python (actually 3 files with the same name and extensions .so, .so.2, .so.2.8.1). Now the easiest way to use it is run python from that folder and import pyrealsense2 or extract the .so files to the root of your files.`  
-
+  `git clone https://github.com/IntelRealSense/librealsense`  
+  `cd librealsense`  
+  `mkdir build`  
+  `cd build`  
+  ###### Note: To force compilation with a specific version on a system with both Python 2 and Python 3 installed, add the following flag to CMake command: -DPYTHON_EXECUTABLE=[full path to the exact python executable]  
+  `cmake ../ -DBUILD_PYTHON_BINDINGS=TRUE`  
+  `make -j4`  
+  `sudo make install #Optional if you want the library to be installed in your system`  
+  If it all goes without errors, you should be able to find the pyrealsense2.<arch info>.so under build/wrappers/python (actually 3 files with the same name and extensions .so, .so.2, .so.2.8.1). Now the easiest way to use it is run python from that folder and import pyrealsense2 or extract the .so files to the root of your files.  
