@@ -75,46 +75,92 @@ class_names = [
 ]
 
 
-pipeline = rs.pipeline()
-config = rs.config()
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-#
-# # Start streaming
-pipeline.start(config)
-#
-time.sleep(5)
+def visualize_mask(image, boxes, masks, class_ids, class_names, scores=None,
+                   title=""):
+    # Number of instances
+    N = boxes.shape[0]
+    if not N:
+        print("No instances to dislay")
+    else:
+        assert boxes.shape[0] == masks.shape[-1] == class_ids.shape[0]
 
+    colors = visualize.random_colors(N)
+    
+    masked_image = np.array(image.astype(np.uint32).copy())
+    for i in range(N):
+        color = colors[i]
 
-while True:
-    # Wait for a coherent pair of frames: depth and color
-    frames = pipeline.wait_for_frames()
-    color_frame = frames.get_color_frame()
-    if not color_frame:
-        continue
+        # Bouding box
+        if not np.any(boxes[i]):
+            # Skip this instance because it does not have a bounding box
+            continue
+        y1, x1, y2, x2 = boxes[i]
+        print(y1)
+        print(x1)
+        print(y2)
+        print(x2)
 
-    # Convert images to numpy arrays
-    color_image = np.asanyarray(color_frame.get_data())
+        cv2.rectangle(masked_image, (x1, y2), (x2, y2), color, 2)
 
-    results = model.detect([color_image], verbose=1)
+    return masked_image
 
-    # Display results
-    ax = get_ax(1)
+def test():
+    image = cv2.imread("test.png")
+
+    results = model.detect([image], verbose=1) 
+
     r = results[0]
-    print(r['class_ids'])
-    image = visualize.display_instances(color_image, r['rois'], r['masks'], r['class_ids'],
-                                        class_names, r['scores'], ax=ax, title="Predictions")
 
-    images = np.hstack((color_image, image))
+    # masked_image = visualize_mask(image, r['rois'], r['masks'], r['class_ids'],
+    #                        class_names, r['scores'], title="Predictions")
 
-    # Show images
-    cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
-    cv2.imshow('RealSense', images)
+    cv2.imshow(image, "predictions")
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+def main():
+    pipeline = rs.pipeline()
+    config = rs.config()
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    #
+    # # Start streaming
+    pipeline.start(config)
+    #
+    time.sleep(5)
 
 
-pipeline.stop()
-cv2.destroyAllWindows()
+    while True:
+        # Wait for a coherent pair of frames: depth and color
+        frames = pipeline.wait_for_frames()
+        color_frame = frames.get_color_frame()
+        if not color_frame:
+            continue
+
+        # Convert images to numpy arrays
+        color_image = np.asanyarray(color_frame.get_data())
+
+        results = model.detect([color_image], verbose=1)
+
+        # Display results
+        ax = get_ax(1)
+        r = results[0]
+        print(r['class_ids'])
+        image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
+                                        class_names, r['scores'], title="Predictions")
+
+        images = np.hstack((color_image, image))
+
+        # Show images
+        cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
+        cv2.imshow('RealSense', images)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+
+    pipeline.stop()
+    cv2.destroyAllWindows()
+
+test()
 
 
