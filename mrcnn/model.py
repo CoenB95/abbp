@@ -23,8 +23,6 @@ import keras.layers as KL
 import keras.engine as KE
 import keras.models as KM
 
-tf = tf.compat.v1
-
 from mrcnn import utils
 
 # Requires TensorFlow 1.3+ and Keras 2.0.8+.
@@ -2324,6 +2322,10 @@ class MaskRCNN():
         }
         if layers in layer_regex.keys():
             layers = layer_regex[layers]
+
+        print("////////////////////////")
+        print(train_dataset)
+        print("////////////////////////")
 
         # Data generators
         train_generator = data_generator(train_dataset, self.config, shuffle=True,

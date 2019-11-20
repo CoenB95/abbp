@@ -2,3 +2,11 @@
 .DS_Store
 .ipynb_checkpoints/
 robot/.vscode/*
+images/
+masks/
+val_images/
+logs/
+**/__pycache__/
+*.h5
+test_images/
+*.so
