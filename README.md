@@ -27,7 +27,7 @@ in $HOME/.bashrc:
 - Python >3.6.9
 - Tensorflow =1.15.0
 - Keras =2.2.5
-## Windows
+### Windows
 - Install shapely via conda because PyPi does not have shapely:
 
     `conda install -c conda-forge shapely`
@@ -35,7 +35,7 @@ in $HOME/.bashrc:
 
     `pip install -r requirements.txt`
 - Download [Intel Realsense drivers](https://downloadcenter.intel.com/product/128256/Intel-RealSense-Depth-Camera-D415)
-## UNIX / Linux
+### UNIX / Linux
 - Install shapely via conda because PyPi does not have shapely
 
     `conda install -c conda-forge shapely`
@@ -64,5 +64,5 @@ in $HOME/.bashrc:
 
     `8 - If it all goes without errors, you should be able to find the pyrealsense2.<arch info>.so under build/wrappers/python (actually 3 files with the same name and extensions .so, .so.2, .so.2.8.1). Now the easiest way to use it is run python from that folder and import pyrealsense2 or extract the .so files to the root of your files.`
 
-### Robot
+# Robot
 Todo
