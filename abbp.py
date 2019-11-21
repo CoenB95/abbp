@@ -86,7 +86,7 @@ def visualize_mask(image, boxes, masks, class_ids, class_names, scores=None,
 
     colors = visualize.random_colors(N)
     
-    masked_image = np.array(image.astype(np.uint32).copy())
+    masked_image = image.copy()
     for i in range(N):
         color = colors[i]
 
@@ -95,14 +95,36 @@ def visualize_mask(image, boxes, masks, class_ids, class_names, scores=None,
             # Skip this instance because it does not have a bounding box
             continue
         y1, x1, y2, x2 = boxes[i]
-        print(y1)
-        print(x1)
-        print(y2)
-        print(x2)
 
-        cv2.rectangle(masked_image, (x1, y2), (x2, y2), color, 2)
+        cv2.rectangle(masked_image, (x1, y1), (x2, y2), rgb(color), 2)
+
+        mask = masks[:, :, i]
+
+        alpha = 0.5
+
+        # Visualizing the mask
+        # 3 Because 3 color channels
+        for c in range(3):
+            masked_image[:, :, c] = np.where(mask == 1, image[:, :, c] * (1 -
+                                                                          alpha)
+                                             + alpha * color[c] * 255,
+                                             masked_image[:, :, c])
+
+        # Visualizing class and score
+        class_id = class_ids[i]
+        score = scores[i] if scores is not None else None
+        label = class_names[class_id]
+        caption = "{} {:.3f}".format(label, score) if score else label
+        cv2.putText(masked_image, caption, (x1, y1 - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX , 0.5, (255, 255, 255))
 
     return masked_image
+
+def rgb(color):
+    rgb = []
+    for v in list(color):
+       rgb.append(v * 255)
+    return rgb
 
 def test():
     image = cv2.imread("test.png")
@@ -111,10 +133,10 @@ def test():
 
     r = results[0]
 
-    # masked_image = visualize_mask(image, r['rois'], r['masks'], r['class_ids'],
-    #                        class_names, r['scores'], title="Predictions")
+    masked_image = visualize_mask(image, r['rois'], r['masks'], r['class_ids'],
+                           class_names, r['scores'], title="Predictions")
 
-    cv2.imshow(image, "predictions")
+    cv2.imshow("predictions", masked_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -145,7 +167,7 @@ def main():
         ax = get_ax(1)
         r = results[0]
         print(r['class_ids'])
-        image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
+        image = visualize.display_instances(color_image, r['rois'], r['masks'], r['class_ids'],
                                         class_names, r['scores'], title="Predictions")
 
         images = np.hstack((color_image, image))

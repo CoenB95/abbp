@@ -10,5 +10,5 @@ logs/
 *.h5
 test_images/
 *.so
-.abbp.py.swp
+*.swp
 test.png
