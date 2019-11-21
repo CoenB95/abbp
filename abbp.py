@@ -167,7 +167,7 @@ def main():
         ax = get_ax(1)
         r = results[0]
         print(r['class_ids'])
-        image = visualize.display_instances(color_image, r['rois'], r['masks'], r['class_ids'],
+        image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
                                         class_names, r['scores'], title="Predictions")
 
         images = np.hstack((color_image, image))
@@ -183,6 +183,6 @@ def main():
     pipeline.stop()
     cv2.destroyAllWindows()
 
-test()
+main()
 
 
