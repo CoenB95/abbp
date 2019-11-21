@@ -89,12 +89,16 @@ class ABBPDataset(utils.Dataset):
         # Convert polygons to a bitmap mask of shape
         # [height, width, instance_count]
         info = self.image_info[image_id]
-        # info = next(filter(lambda x: x['id'] == image_id, self.image_info))
         
         mask = np.zeros([info["height"], info["width"], 1], dtype=np.uint8)
-        rr, cc = skimage.draw.polygon(info["polygon"][0], info["polygon"][1])
 
-        mask[cc, rr, 0] = 1
+        xpoints = info["polygon"][0]
+        ypoints = info["polygon"][1]
+
+        for xs, ys in zip(xpoints, ypoints):
+            rr, cc = skimage.draw.polygon(xs, ys)
+
+            mask[cc, rr, 0] = 1
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
