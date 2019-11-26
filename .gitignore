@@ -12,3 +12,4 @@ test_images/
 *.so
 *.swp
 test.png
+datasets/
