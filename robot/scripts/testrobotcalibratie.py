@@ -1,38 +1,27 @@
 #!/usr/bin/env python3
 
-import rospy
-import urx
-import logging
-import roslib
-import sys
 import actionlib
+import logging
+import math3d as m3d
+import roslib
+import rospy
+import sys
 import time
-
-roslib.load_manifest('ur_driver')
-#roslib.load_manifest('robotcalibratie')
+import urx
 
 from camera_node.msg import prop
-from control_msgs.msg import *
+from control_msgs.msg import FollowJointTrajectoryAction
+from math import pi
 from sensor_msgs.msg import JointState
 from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import Header,Float64MultiArray
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
-from ur_msgs.srv import *
-from ur_msgs.msg import *
-
-from math import pi
-import math3d as m3d
+from ur_msgs.msg import IOStates
+from ur_msgs.srv import SetIO
 
 
-#import copy
-#import moveit_commander
-#from copy import deepcopy
-#import geometry_msgs.msg
-#import moveit_msgs.msg
-
-from ur_driver import *
-from ur_driver.io_interface import*
+roslib.load_manifest('ur_driver')
 
 rob = urx.Robot("172.22.22.2")
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
@@ -50,7 +39,7 @@ py = m3d.Vector(ypositief[:3])
 newPlane = m3d.Transform.new_from_xyp(px - p0, py - p0, p0)
 rob.set_csys(newPlane)
 time.sleep(0.3)
-raw_input("New plane is set! press enter")
+input("New plane is set! press enter")
 
 
 
@@ -164,10 +153,10 @@ def main():
         coordinates()
 
         poseCirkel = [xRobot, yRobot, -0.100, 0, 0, 3.7]
-        pose1 = [0.27491, 0.20474, 0.12119, 3.14, 0, 0]
-        pose2 = [-0.34810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
-        pose3 = [0.78021, -0.12499, 0.29962, 3.14, 0, 0]
-        pose4 = [0, 0, 0, 3.14, 0, 0]
+        # pose1 = [0.27491, 0.20474, 0.12119, 3.14, 0, 0]
+        # pose2 = [-0.34810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
+        # pose3 = [0.78021, -0.12499, 0.29962, 3.14, 0, 0]
+        # pose4 = [0, 0, 0, 3.14, 0, 0]
         v = 0.3
         a = 0.2
         # rospy.spin()
@@ -213,10 +202,10 @@ def main():
     except rospy.ROSInterruptException:
         print("ERROR: ROS interrupted!")
         pass
+    except Exception as e:
+        print("CRITICAL ERROR: %s" %e)
     finally:
         rob.close()
-        print("CRITICAL ERROR")
-        raise
         sys.exit()
 
 if __name__ == '__main__': main()
