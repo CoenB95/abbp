@@ -1,0 +1,26 @@
+<launch>
+  <arg name="driver" default="false"/>
+  <arg name="detection" default="false"/>
+  <arg name="view" default="false"/>
+
+  <!-- Realsense Camera Driver -->
+  <group if="$(arg driver)">
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+      <arg name="align_depth" value="false" />
+      <arg name="filters" value="pointcloud" />
+    </include>
+  </group>
+
+  <!-- Blobdetection -->
+  <group if="$(arg detection)">
+      <node pkg="camera_node" type="blobdetectie" name="blobdetection" output="screen"/>
+  </group>
+
+  <!-- Realsense Camera -->
+  <group if="$(arg view)">
+    <node pkg="image_view" type="image_view" name="image_view" output="screen">
+      <arg name="image" value="camerabeeld"/>
+    </node>
+  </group>
+
+</launch>
