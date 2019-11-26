@@ -18,9 +18,7 @@
 
   <!-- Realsense Camera -->
   <group if="$(arg view)">
-    <node pkg="image_view" type="image_view" name="image_view" output="screen">
-      <arg name="image" value="camerabeeld"/>
-    </node>
+    <node pkg="image_view" type="image_view" name="image_view" output="screen" args="image:=camerabeeld"/>
   </group>
 
 </launch>
