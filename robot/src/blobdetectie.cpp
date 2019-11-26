@@ -39,7 +39,7 @@ public:
     // Subscrive to input video feed and publish output video feed
     image_sub_ = it_.subscribe("/camera/color/image_raw", 1,
       &ImageConverter::imageCb, this);
-    image_pub_ = it_.advertise("/output_camera_bal", 1);
+    image_pub_ = it_.advertise("/camerabeeld", 1);
    
 
     namedWindow(OPENCV_WINDOW);
