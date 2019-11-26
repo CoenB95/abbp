@@ -1,0 +1,14 @@
+<launch>
+  <arg name="camera" default="false"/>
+
+  <!-- Realsense Camera -->
+  <group if="$(arg camera)">
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
+      <arg name="align_depth" value="false" />
+      <arg name="filters" value="pointcloud" />
+    </include>
+  </group>
+
+  <!-- ABBP Robot Program -->
+  <node pkg="abbp_robot" type="abbp_robot_node" name="abbp_robot_node" output="screen"/>
+</launch>
