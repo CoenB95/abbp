@@ -8,6 +8,7 @@ import rospy
 import sys
 import time
 import urx
+import math
 
 from camera_node.msg import prop
 from control_msgs.msg import FollowJointTrajectoryAction
@@ -97,12 +98,13 @@ def coordinates():
         rob.set_freedrive(True, timeout=300)
         rob.new_csys_from_xpy()
         rob.set_freedrive(False)
-        xrealworld = 0.530
-        yrealworld = 0.430
-        xresolution = 640
-        yresolution = 480
-        xmmperpix = xrealworld/xresolution
-        ymmperpix = yrealworld/yresolution
+        HorFov = 69.4 * pi/180 #Graden naar radialen
+        VerFov = 42.5 * pi/180
+        HorPixelRes = 640
+        VerPixelRes = 480
+        HoogteObject = 0.460
+        xmmperpix = ((math.tan(HorFov/2) * HoogteObject) * 2)/HorPixelRes
+        ymmperpix = ((math.tan(VerFov/2) * HoogteObject) * 2)/VerPixelRes
         xCirkel = x1
         yCirkel = y1
         xRobot = xCirkel * xmmperpix
