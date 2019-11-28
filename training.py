@@ -45,6 +45,18 @@ class ABBPConfig(Config):
 
 # Dataset class ABBPDataset(utils.Dataset):
 class ABBPDataset(utils.Dataset):
+
+    def load_image(self, image_id):
+        image = skimage.io.imread(self.image_info[image_id]['path'])
+        depth_image = skimage.io.imread(self.image_info[image_id]['depth_path'])
+
+        if image.ndim != 3:
+            skimage.color.gray2rgb(image)
+
+        combined_image = np.dstack((image, depth_image))
+
+        return combined_image
+
     def load_object(self, dataset_dir):
         """Load a subset of the Objects dataset.
         dataset_dir: Root directory of the dataset.
@@ -74,9 +86,10 @@ class ABBPDataset(utils.Dataset):
                 "ABBP",
                 image_id=a['filename'],  # use file name as a unique image id
                 path=os.path.join(dataset_dir, a['filename']),
+                depth_path=os.path.join(dataset_dir, "depth" + a['filename']),
                 width=a['width'], height=a['height'],
                 polygon=[x_points, y_points],
-                class_id=int(a['region']['class']))
+                class_id=int(a['class']))
 
     def load_mask(self, image_id):
         """Generate instance masks for an image.
@@ -90,15 +103,14 @@ class ABBPDataset(utils.Dataset):
         # [height, width, instance_count]
         info = self.image_info[image_id]
         
-        mask = np.zeros([info["height"], info["width"], 1], dtype=np.uint8)
+        mask = np.zeros([info["height"], info["width"], 2], dtype=np.uint8)
 
         xpoints = info["polygon"][0]
         ypoints = info["polygon"][1]
 
-        for xs, ys in zip(xpoints, ypoints):
-            rr, cc = skimage.draw.polygon(xs, ys)
+        rr, cc = skimage.draw.polygon(xpoints, ypoints)
 
-            mask[cc, rr, 0] = 1
+        mask[cc, rr, 0] = 1
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
@@ -106,6 +118,20 @@ class ABBPDataset(utils.Dataset):
 
     def image_reference(self, image_id):
         return self.image_info[image_id]
+
+
+def test():
+    dataset = ABBPDataset()
+    dataset.load_object("datasets/test_image")
+    dataset.prepare()
+
+    image = dataset.load_image(0)
+    
+    import cv2
+    
+    cv2.imshow("test", image[:, :, :3])
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 def train(model):
@@ -128,3 +154,6 @@ def train(model):
                 learning_rate=0.001,
                 epochs=30,
                 layers='heads')
+
+
+test()
