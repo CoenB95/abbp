@@ -3,12 +3,15 @@ import os
 import numpy as np
 import skimage.io
 import json
+import cv2
 
-ROOT_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/abbp'
+# ROOT_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/abbp'
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT_DIR)
 
 from mrcnn.config import Config
 from mrcnn import utils
+import annotation_generator
 
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
@@ -58,6 +61,10 @@ class ABBPDataset(utils.Dataset):
         self.add_class("ABBP", 5, "five")
         self.add_class("ABBP", 6, "six")
 
+        # Create annotations
+        if os.path.isfile(os.path.join(dataset_dir, "annotations.json")) is False:
+            annotation_generator.generate_annotations()
+
         # Load annotations
         annotations = json.load(open(os.path.join(dataset_dir, "annotations.json")))
         annotations = list(annotations.values())  # don't need the dict keys
@@ -76,7 +83,7 @@ class ABBPDataset(utils.Dataset):
                 path=os.path.join(dataset_dir, a['filename']),
                 width=a['width'], height=a['height'],
                 polygon=[x_points, y_points],
-                class_id=int(a['region']['class']))
+                class_id=int(a['class']))
 
     def load_mask(self, image_id):
         """Generate instance masks for an image.
