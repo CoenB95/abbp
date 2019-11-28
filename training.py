@@ -7,6 +7,7 @@ import cv2
 
 # ROOT_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/abbp'
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+print("ROOT: " + str(ROOT_DIR))
 sys.path.insert(0, ROOT_DIR)
 
 from mrcnn.config import Config
@@ -45,6 +46,10 @@ class ABBPConfig(Config):
     # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 2
 
+    IMAGE_CHANNEL_COUNT = 4
+
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 0.5])
+
 
 # Dataset class ABBPDataset(utils.Dataset):
 class ABBPDataset(utils.Dataset):
@@ -75,7 +80,7 @@ class ABBPDataset(utils.Dataset):
 
         # Create annotations
         if not os.path.isfile(os.path.join(dataset_dir, "annotations.json")):
-            annotation_generator.generate_annotations()
+            annotation_generator.generate_annotations(dataset_dir)
 
         # Load annotations
         annotations = json.load(open(os.path.join(dataset_dir, "annotations.json")))
@@ -85,9 +90,6 @@ class ABBPDataset(utils.Dataset):
         for a in annotations:
             x_points = a['region']['all_points_x']
             y_points = a['region']['all_points_y']
-
-            # for x, y in zip(x_points, y_points):
-            #     polygon.append(np.array([x, y]).transpose())
 
             self.add_image(
                 "ABBP",
@@ -110,7 +112,7 @@ class ABBPDataset(utils.Dataset):
         # [height, width, instance_count]
         info = self.image_info[image_id]
         
-        mask = np.zeros([info["height"], info["width"], 2], dtype=np.uint8)
+        mask = np.zeros([info["height"], info["width"], 1], dtype=np.uint8)
 
         xpoints = info["polygon"][0]
         ypoints = info["polygon"][1]
@@ -125,11 +127,6 @@ class ABBPDataset(utils.Dataset):
 
     def image_reference(self, image_id):
         return self.image_info[image_id]
-
-
-def test():
-    dataset = ABBPDataset()
-    dataset.load_object("datasets/images")
 
 
 def train(model):
@@ -152,6 +149,3 @@ def train(model):
                 learning_rate=0.001,
                 epochs=30,
                 layers='heads')
-
-
-test()

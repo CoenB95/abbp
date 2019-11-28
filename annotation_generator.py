@@ -23,6 +23,7 @@ def find_contours(img):
 
 class Image(object):
     def __init__(self, file):
+        print(file)
         self.image = cv2.imread(file)
         idx = len(file.split('/'))
         self.name = file.split('/')[idx - 1]
@@ -30,11 +31,10 @@ class Image(object):
         self.contours = find_contours(cv2.imread(file))
 
 
-def generate_annotations():
+def generate_annotations(directory):
     # Save the points to a json file
     images = []
-
-    for file in glob.glob("./datasets/images/*.png"):
+    for file in glob.glob(directory + "/*.png"):
         idx = len(file.split('/'))
         if not file.split('/')[idx - 1].startswith("depth"):
             images.append(Image(file))
@@ -61,5 +61,5 @@ def generate_annotations():
 
     print("Finnished generating annotations")
 
-    with open('datasets/images/annotations.json', 'w') as json_file:
+    with open(directory + '/annotations.json', 'w') as json_file:
         json.dump(data, json_file)
