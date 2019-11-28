@@ -70,10 +70,10 @@ def IOStates_callback(msg):
     global knop
     if (msg.digital_in_states[1].state == True):
         knop = True
-        print(knop)
+        # print(knop)
     if (msg.digital_in_states[0].state == True):
         knop = False
-        print(knop)
+        # print(knop)
 
 def propCallback(msg):
     global x
@@ -84,8 +84,9 @@ def propCallback(msg):
     # print y
 
 def kalibreren():
-    global xRobot
-    global yRobot
+    global xmmperpix
+    global ymmperpix
+
     tcp = [0, 0, 0.106, 0, 0, 0]
     rob.set_tcp(tcp)
     time.sleep(0.2)
@@ -93,53 +94,69 @@ def kalibreren():
     # Coordinatenstelsel aanmaken
     rob.set_freedrive(True, timeout=500)
     print("A new coordinate system will be defined from the next three points")
-    print("Firs point is Origin, second X, third Y")
-    print("Set it as a new reference by calling myrobot.set_csys(new_plane)")
+    print("First point is Origin, second X, third Y")
     
-    input("Move to first point and click Enter")
-    pose = rob.getl()
+    input("When origin circle is detected press enter")
     origin = (x,y)
-    print("Pixelvalue origin: {}".origin)
-    print("Introduced point defining the Origin: {}".format(pose[:3]))
+    input("Move the robot to origin and press enter")
+    pose = rob.getl()
+    print("Pixelvalue origin: {}".format(origin))
+    print("Robotvalue origin: {}".format(pose[:3]))
     p0 = m3d.Vector(pose[:3])
     
-    input("Move to second point and click Enter")
-    pose = rob.getl()
+    input("When X circle is detected press enter")
     positivex = (x,y)
-    print("Pixelvalue origin: {}".positivex)
-    print("Introduced point defining X: {}".format(pose[:3]))
+    input("Move the robot to X and press enter")
+    pose = rob.getl()
+    print("Pixelvalue X: {}".format(positivex))
+    print("Robotvalue X: {}".format(pose[:3]))
     px = m3d.Vector(pose[:3])
     
-    input("Move to third point and click Enter")
-    pose = rob.getl()
+    input("When Y circle is detected press enter")
     positivey = (x,y)
-    print("Pixelvalue origin: {}".positivey)
-    print("Introduced point defining Y: {}".format(pose[:3]))
+    input("Move the robot to Y and press enter")
+    pose = rob.getl()
+    print("Pixelvalue Y: {}".format(positivey))
+    print("Robotvalue Y: {}".format(pose[:3]))
     py = m3d.Vector(pose[:3])
 
     newPlane = m3d.Transform.new_from_xyp(px - p0, py - p0, p0)
     rob.set_csys(newPlane)
     time.sleep(0.2)
-    input("New plane is set! Put the robot in propper place and press enter")
+    input("New plane is set! Put the robot in proper place and press enter")
     rob.set_freedrive(False)
-# /////////////////////// AFSTAND PER PIXEL NOG BEPALEN!!!!!!!!!!!!!!!????????????????????????????
-        # rob.set_freedrive(True, timeout=500)
-        # rob.new_csys_from_xpy()
-        # rob.set_freedrive(True, timeout=10)
-        # xrealworld = 0.530
-        # yrealworld = 0.430
-        # xresolution = 640
-        # yresolution = 480
-        # xmmperpix = xrealworld/xresolution
-        # ymmperpix = yrealworld/yresolution
-        # xCirkel = x1
-        # yCirkel = y1
-        # xRobot = xCirkel * xmmperpix
-        # yRobot = yCirkel * ymmperpix
-        # print("x Coördinaat:")
-        # print(xRobot)
-        # print("y Coördinaat:")
-        # print(yRobot)
+# /////////////////////// AFSTAND PER PIXEL NOG BEPALEN!!!!!!!!!!!!!!!////////////////////////////
+    xrealworld = px[1] - p0[1]
+    yrealworld = py[0] - p0[0]
+    xresolution = 640
+    yresolution = 480
+    xmmperpix = xrealworld/xresolution
+    ymmperpix = yrealworld/yresolution
+
+def oudekalibratie():
+    global xmmperpix
+    global ymmperpix
+
+    origin = [0.4120224728754105, -0.22691786947077103, 0.0023989833706220126, 1.9156710830715367, -2.4346068376538126, 0]
+    xpositief = [0.4128422172311459, 0.22647243766728514, 0.0024593076828873656, 2.8605895655882057, -1.2148532445977118, 0]
+    ypositief = [0.815116143931001, -0.22671715766873157, 0.00328736800204138, 2.0404649983028413, -2.313233757936987, 0]
+    tcp = [0, 0, 0.106, 0, 0, 0]
+    rob.set_tcp(tcp)
+    time.sleep(0.2)
+
+    orig = m3d.Vector(origin[:3])
+    posx = m3d.Vector(xpositief[:3])
+    posy = m3d.Vector(ypositief[:3])
+    oldPlane = m3d.Transform.new_from_xyp(posx - orig, posy - orig, orig)
+    rob.set_csys(oldPlane)
+    time.sleep(0.2)
+
+    xrealworld = posx[1] - orig[1]
+    yrealworld = posy[0] - orig[0]
+    xresolution = 640
+    yresolution = 480
+    xmmperpix = xrealworld/xresolution
+    ymmperpix = yrealworld/yresolution
 
 def pointcloudCallback(msg):
     global pointcloud
@@ -172,16 +189,36 @@ def main():
         kalibratie = input("Do you want to calibrate the robot and camera? y/n: ")[0]
         if (kalibratie == 'y'):
             kalibreren()
+        else:
+            oudekalibratie()
 
-        ?poseCirkel = [xRobot, yRobot, -0.100, 0, 0, 3.7]
+        xCirkel = x
+        yCirkel = y
+        xRobot = xCirkel * xmmperpix
+        yRobot = yCirkel * ymmperpix
+        print("x Coördinaat:")
+        print(xRobot)
+        print("y Coördinaat:")
+        print(yRobot)
+        poseCirkel = [xRobot, yRobot, -0.100, 0, 0, 3.7]
         # pose1 = [0.27491, 0.20474, 0.12119, 3.14, 0, 0]
         # pose2 = [-0.34810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
         # pose3 = [0.78021, -0.12499, 0.29962, 3.14, 0, 0]
         # pose4 = [0, 0, 0, 3.14, 0, 0]
-        # v = 0.3
-        # a = 0.2
+        v = 0.3
+        a = 0.2
         # rospy.spin()
-       
+
+        while (True):
+            if (knop == True):
+                print("knop is in")
+            while (knop == True):
+                rob.movel(poseCirkel, acc=a, vel=v, wait=False)
+                time.sleep(0.3)
+                while True:
+                    if not rob.is_program_running():
+                        break
+
     except rospy.ROSInterruptException:
         print("ERROR: ROS interrupted!")
         pass
