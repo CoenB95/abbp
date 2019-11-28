@@ -3,12 +3,15 @@ import os
 import numpy as np
 import skimage.io
 import json
+import cv2
 
-ROOT_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/abbp'
+# ROOT_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/abbp'
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT_DIR)
 
 from mrcnn.config import Config
 from mrcnn import utils
+import annotation_generator
 
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
@@ -70,6 +73,10 @@ class ABBPDataset(utils.Dataset):
         self.add_class("ABBP", 5, "five")
         self.add_class("ABBP", 6, "six")
 
+        # Create annotations
+        if not os.path.isfile(os.path.join(dataset_dir, "annotations.json")):
+            annotation_generator.generate_annotations()
+
         # Load annotations
         annotations = json.load(open(os.path.join(dataset_dir, "annotations.json")))
         annotations = list(annotations.values())  # don't need the dict keys
@@ -122,16 +129,7 @@ class ABBPDataset(utils.Dataset):
 
 def test():
     dataset = ABBPDataset()
-    dataset.load_object("datasets/test_image")
-    dataset.prepare()
-
-    image = dataset.load_image(0)
-    
-    import cv2
-    
-    cv2.imshow("test", image[:, :, :3])
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    dataset.load_object("datasets/images")
 
 
 def train(model):
