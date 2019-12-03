@@ -215,6 +215,12 @@ add_executable(blobdetectie src/blobdetectie.cpp)
 add_dependencies(blobdetectie ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(blobdetectie ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
+set(SOURCES src/diepteblobdetectie.cpp )
+add_executable(diepteblobdetectie src/diepteblobdetectie.cpp)
+add_dependencies(diepteblobdetectie ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(diepteblobdetectie ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS})
 target_link_libraries( blobdetectie ${OpenCV_LIBS} )
+target_link_libraries( diepteblobdetectie ${OpenCV_LIBS} )
