@@ -44,7 +44,7 @@ public:
     image_sub_ = it_.subscribe("/camera/color/image_raw", 1,
       &ImageConverter::imageCb, this);
     //Subsribe to depth image en depth image callback functie aanroepen
-    depth_image_sub_ = it_.subscribe("/camera/depth/image_rect_raw", 1,
+    depth_image_sub_ = it_.subscribe("/camera/aligned_depth_to_color/image_raw", 1,
       &ImageConverter::Depth_imageCb, this);
     image_pub_ = it_.advertise("/camerabeeld", 1);
    
@@ -86,7 +86,7 @@ public:
     cv_bridge::CvImagePtr cv_ptrD;
     try
     {
-      cv_ptrD = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+      cv_ptrD = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
     }
     catch (cv_bridge::Exception& e)
     {
@@ -94,12 +94,9 @@ public:
     return;
     }
 
-  
     Mat depth = cv_ptrD->image;
-    d = depth.at<uchar>(200, 100);
-
-
-    
+    d = depth.at<float>(y, x);
+    ROS_INFO("Depth at %3d, %3d: %3.2f", x, y, d);
   }
 
 };
