@@ -51,15 +51,15 @@ class ABBPConfig(Config):
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 0.5])
 
 
+
 # Dataset class ABBPDataset(utils.Dataset):
 class ABBPDataset(utils.Dataset):
 
     def load_image(self, image_id):
         image = skimage.io.imread(self.image_info[image_id]['path'])
-        depth_image = skimage.io.imread(self.image_info[image_id]['depth_path'])
+        depth_image = skimage.io.imread(self.image_info[image_id]['depth_path'], as_gray=True)
 
-        if image.ndim != 3:
-            skimage.color.gray2rgb(image)
+        image = skimage.color.rgba2rgb(image)
 
         combined_image = np.dstack((image, depth_image))
 
@@ -149,3 +149,4 @@ def train(model):
                 learning_rate=0.001,
                 epochs=30,
                 layers='heads')
+
