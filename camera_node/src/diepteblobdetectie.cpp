@@ -19,7 +19,7 @@ using namespace cv;
 static const std::string OPENCV_WINDOW = "Image window";
 
 int32_t x,y,h,w;
-double d;
+float d;
 Mat im_with_keypoints_;
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg);
@@ -122,6 +122,7 @@ int main(int argc, char** argv)
     data.y = y;
     data.h = h;
     data.w = w;
+    data.d = d;
 
     prop_pub.publish(data);
 
