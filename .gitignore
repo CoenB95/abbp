@@ -73,3 +73,5 @@ datasets/
 **/crashlytics-build.properties
 
 **/ML-Agents
+
+**/envs

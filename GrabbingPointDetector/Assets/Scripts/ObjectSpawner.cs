@@ -7,7 +7,7 @@ public class ObjectSpawner : MonoBehaviour
     public GameObject[] objects;
     public int amountPerObject;
 
-    void Start() 
+    public void SpawnObjects() 
     {
         float maxX = transform.parent.localScale.x;
         float minX = -transform.parent.localScale.x;
@@ -19,13 +19,9 @@ public class ObjectSpawner : MonoBehaviour
                 float x = Random.Range(minX, maxX);
                 float z = Random.Range(minZ, maxZ);
                 Debug.Log(x + ", " + z);
-                Instantiate(objects[i], new Vector3(x, transform.position.y, z), Random.rotation);
+                GameObject newObject = Instantiate(objects[i], new Vector3(x, transform.position.y, z), Random.rotation);
+                newObject.transform.parent = gameObject.transform;
             }
         }
-    }
-
-    void Update()
-    {
-
     }
 }

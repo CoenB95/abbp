@@ -29,6 +29,9 @@ TagManager:
   - symbol_O_Goal
   - purpleAgent
   - purpleGoal
+  - Object
+  - New tag
+  - Spawner
   layers:
   - Default
   - TransparentFX

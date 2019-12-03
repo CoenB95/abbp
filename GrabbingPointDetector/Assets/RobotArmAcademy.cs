@@ -1,18 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using MLAgents;
 using UnityEngine;
 
-public class RobotArmAcademy : MonoBehaviour
+public class RobotArmAcademy : Academy
 {
-    // Start is called before the first frame update
-    void Start()
+    public override void AcademyReset()
     {
-        
+        Physics.gravity = new Vector3(0, -resetParameters["gravity"], 0);
     }
 
-    // Update is called once per frame
-    void Update()
+    public override void AcademyStep()
     {
-        
     }
 }
