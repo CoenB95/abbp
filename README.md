@@ -34,6 +34,10 @@ add line `source $ROS_WS/devel/setup.bash`
 - Python >3.6.9
 - Tensorflow =1.15.0
 - Keras =2.2.5
+
+###### Note: to train the neural network with a (NVIDIA) GPU:
+- CUDA 10.0
+- CUDNN v7.6.0
 ### Windows
 - Install shapely via conda because PyPi does not have shapely:  
 `conda install -c conda-forge shapely`  
