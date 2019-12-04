@@ -14,7 +14,7 @@
 
   <!-- Blobdetection -->
   <group if="$(arg detection)">
-      <node pkg="camera_node" type="blobdetectie" name="blobdetection" output="screen"/>
+      <node pkg="camera_node" type="diepteblobdetectie" name="diepteblobdetection" output="screen"/>
   </group>
 
   <!-- Realsense Camera -->
