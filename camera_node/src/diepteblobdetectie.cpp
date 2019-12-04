@@ -19,15 +19,19 @@ using namespace cv;
 static const std::string OPENCV_WINDOW = "Image window";
 
 int32_t x,y,h,w;
+float d;
 Mat im_with_keypoints_;
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg);
+void Depth_imageCb(const sensor_msgs::ImageConstPtr& msg);
 int vindBal(Mat input, int32_t & x_, int32_t & y_, int32_t & h_, int32_t & w_, Mat & mask1);
+void Callback_diepte(const sensor_msgs::ImageConstPtr& msg);
 
 class ImageConverter
 {
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
+  image_transport::Subscriber depth_image_sub_;
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
 
@@ -36,9 +40,12 @@ public:
   ImageConverter()
     : it_(nh_)
   {
-    // Subscrive to input video feed and publish output video feed
+    // Subscribe to input video feed and publish output video feed
     image_sub_ = it_.subscribe("/camera/color/image_raw", 1,
       &ImageConverter::imageCb, this);
+    //Subsribe to depth image en depth image callback functie aanroepen
+    depth_image_sub_ = it_.subscribe("/camera/aligned_depth_to_color/image_raw", 1,
+      &ImageConverter::Depth_imageCb, this);
     image_pub_ = it_.advertise("/camerabeeld", 1);
    
 
@@ -74,12 +81,31 @@ public:
     image_pub_.publish(cv_ptr->toImageMsg());
   }
 
+  void Depth_imageCb(const sensor_msgs::ImageConstPtr& msg)
+  {
+    cv_bridge::CvImagePtr cv_ptrD;
+    try
+    {
+      cv_ptrD = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+    }
+
+    Mat depth = cv_ptrD->image;
+    d = depth.at<float>(y, x);
+    ROS_INFO("Depth at %3d, %3d: %3.2f", x, y, d);
+  }
+
 };
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "camera_node");
   ros::NodeHandle n;
+  ros::Subscriber depth_sub = n.subscribe<sensor_msgs::Image>("/camera/depth/image_rect_raw", 25, Callback_diepte);
   ros::Publisher  prop_pub = n.advertise<camera_node::prop>("blob_properties", 25);
 
   ImageConverter ic;
@@ -93,6 +119,7 @@ int main(int argc, char** argv)
     data.y = y;
     data.h = h;
     data.w = w;
+    data.d = d;
 
     prop_pub.publish(data);
 
@@ -119,11 +146,11 @@ int vindBal(Mat input, int32_t & x_, int32_t & y_, int32_t & h_, int32_t & w_, M
   // Filter by Area.
   params.filterByArea = true;
   params.minArea = 600;
-  params.maxArea = 160000;
+  params.maxArea = 16000;
 
   // Filter by Circularity
   params.filterByCircularity = true;
-  params.minCircularity = 0.8;
+  params.minCircularity = 0.4;
 
   // Filter by Convexity
   params.filterByConvexity = false;
@@ -154,7 +181,7 @@ int vindBal(Mat input, int32_t & x_, int32_t & y_, int32_t & h_, int32_t & w_, M
       x1 = keypoints[0].pt.x;
       y1 = keypoints[0].pt.y;
     }
-
+  circle(input, Point(x1, y1), 2, Scalar(0, 0, 255), -1);
   x_ = x1;
   y_ = y1;
 
@@ -163,4 +190,8 @@ int vindBal(Mat input, int32_t & x_, int32_t & y_, int32_t & h_, int32_t & w_, M
   w_ = input.rows;
 
   return 0;
+}
+
+void Callback_diepte(const sensor_msgs::ImageConstPtr& msg) {
+  return;
 }

@@ -119,11 +119,11 @@ int vindBal(Mat input, int32_t & x_, int32_t & y_, int32_t & h_, int32_t & w_, M
   // Filter by Area.
   params.filterByArea = true;
   params.minArea = 600;
-  params.maxArea = 160000;
+  params.maxArea = 16000;
 
   // Filter by Circularity
   params.filterByCircularity = true;
-  params.minCircularity = 0.8;
+  params.minCircularity = 0.4;
 
   // Filter by Convexity
   params.filterByConvexity = false;
@@ -154,7 +154,7 @@ int vindBal(Mat input, int32_t & x_, int32_t & y_, int32_t & h_, int32_t & w_, M
       x1 = keypoints[0].pt.x;
       y1 = keypoints[0].pt.y;
     }
-
+  circle(input, Point(x1, y1), 2, Scalar(0, 0, 255), -1);
   x_ = x1;
   y_ = y1;
 
