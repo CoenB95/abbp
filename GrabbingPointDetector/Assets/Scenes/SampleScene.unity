@@ -196,6 +196,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: RobotArm
       objectReference: {fileID: 0}
+    - target: {fileID: -927199367670048503, guid: 0818b2aca1e0247048e1ed5b3c65c794,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -5975033157549033438, guid: 0818b2aca1e0247048e1ed5b3c65c794,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -341,6 +346,23 @@ MonoBehaviour:
   m_InferenceDevice: 0
   m_UseHeuristic: 0
   m_BehaviorName: RobotArm Behaviour
+--- !u!114 &599491778
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 599491775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 282f342c2ab144bf38be65d4d0c4e07d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  camera: {fileID: 963194227}
+  sensorName: CameraSensor
+  width: 84
+  height: 84
+  grayscale: 0
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -477,11 +499,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   objects:
-  - {fileID: 624747442267309168, guid: 0be49e707c6414102a002c676d2747ea, type: 3}
-  - {fileID: 1202369392197135806, guid: 192a32257dbf44572a95f9477b2cf15e, type: 3}
-  - {fileID: 38747184457151862, guid: 03114c27aed1b403880ca72a589932b5, type: 3}
-  - {fileID: 5858485514710744275, guid: 22c821844d8584a0f8299839bed382ee, type: 3}
-  amountPerObject: 1
+  - {fileID: 6109477876498567129, guid: fcd65799542ce420f85ac660c39036a9, type: 3}
+  - {fileID: 5803466945350495966, guid: bd56ecdb33ec64ca9abbdf9c547f6a3a, type: 3}
+  amountPerObject: 20
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0

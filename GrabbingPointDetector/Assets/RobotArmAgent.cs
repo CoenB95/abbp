@@ -31,10 +31,7 @@ public class RobotArmAgent : Agent
 
         transform.rotation = new Quaternion(rotationX, 0, rotationZ, 1f);
 
-        foreach (float a in vectorAction) {
-            print(a);
-        }
-
+        SetReward(10f);
         Done();
     }
 

@@ -20,7 +20,7 @@ public class ObjectSpawner : MonoBehaviour
                 float z = Random.Range(minZ, maxZ);
                 Debug.Log(x + ", " + z);
                 GameObject newObject = Instantiate(objects[i], new Vector3(x, transform.position.y, z), Random.rotation);
-                newObject.transform.parent = gameObject.transform;
+                newObject.transform.parent = gameObject.transform.parent;
             }
         }
     }
