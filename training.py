@@ -3,12 +3,15 @@ import os
 import numpy as np
 import skimage.io
 import json
+import cv2
 
-ROOT_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/abbp'
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+print("ROOT: " + str(ROOT_DIR))
 sys.path.insert(0, ROOT_DIR)
 
 from mrcnn.config import Config
 from mrcnn import utils, model as modellib
+import annotation_generator
 
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
@@ -42,9 +45,20 @@ class ABBPConfig(Config):
     # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 2
 
+    IMAGE_CHANNEL_COUNT = 1
+
+    MEAN_PIXEL = np.array([114.8])
+
+
 
 # Dataset class ABBPDataset(utils.Dataset):
 class ABBPDataset(utils.Dataset):
+
+    def load_image(self, image_id):
+        image = skimage.io.imread(self.image_info[image_id]['path'], as_gray=True)
+        image = (image[:, :, np.newaxis])
+        return image
+
     def load_object(self, dataset_dir):
         """Load a subset of the Objects dataset.
         dataset_dir: Root directory of the dataset.
@@ -58,6 +72,10 @@ class ABBPDataset(utils.Dataset):
         self.add_class("ABBP", 5, "five")
         self.add_class("ABBP", 6, "six")
 
+        # Create annotations
+        if not os.path.isfile(os.path.join(dataset_dir, "annotations.json")):
+            annotation_generator.generate_annotations(dataset_dir)
+
         # Load annotations
         annotations = json.load(open(os.path.join(dataset_dir, "annotations.json")))
         annotations = list(annotations.values())  # don't need the dict keys
@@ -67,16 +85,13 @@ class ABBPDataset(utils.Dataset):
             x_points = a['region']['all_points_x']
             y_points = a['region']['all_points_y']
 
-            # for x, y in zip(x_points, y_points):
-            #     polygon.append(np.array([x, y]).transpose())
-
             self.add_image(
                 "ABBP",
                 image_id=a['filename'],  # use file name as a unique image id
                 path=os.path.join(dataset_dir, a['filename']),
                 width=a['width'], height=a['height'],
                 polygon=[x_points, y_points],
-                class_id=int(a['region']['class']))
+                class_id=int(a['class']))
 
     def load_mask(self, image_id):
         """Generate instance masks for an image.
@@ -95,10 +110,9 @@ class ABBPDataset(utils.Dataset):
         xpoints = info["polygon"][0]
         ypoints = info["polygon"][1]
 
-        for xs, ys in zip(xpoints, ypoints):
-            rr, cc = skimage.draw.polygon(xs, ys)
+        rr, cc = skimage.draw.polygon(xpoints, ypoints)
 
-            mask[cc, rr, 0] = 1
+        mask[cc, rr, 0] = 1
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
@@ -123,6 +137,7 @@ def train(model):
                 learning_rate=0.001,
                 epochs=30,
                 layers='heads')
+
 
 def validate(model):
     dataset_val = ABBPDataset()
@@ -198,3 +213,4 @@ elif args.command == "validate":
     validate(model)
 elif args.command == "inference":
     # TODO
+
