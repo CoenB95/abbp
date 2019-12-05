@@ -12,8 +12,9 @@ import urx
 from camera_node.msg import prop
 from control_msgs.msg import FollowJointTrajectoryAction
 from math import pi
+from math import atan
+from math import tan
 from sensor_msgs.msg import JointState
-from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import Header,Float64MultiArray
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -78,15 +79,21 @@ def IOStates_callback(msg):
 def propCallback(msg):
     global x
     global y
+    global diepte
     x = msg.x
     y = msg.y
+    diepte = msg.d
     # print x
     # print y
 
 def kalibreren():
-    global xmmperpix
-    global ymmperpix
+    global xhoekpixel
+    global yhoekpixel
+    global xresolution
+    global yresolution
+    global dOrigin
 
+    # Set tcp voor het aanwijspunt op de robot
     tcp = [0, 0, 0.106, 0, 0, 0]
     rob.set_tcp(tcp)
     time.sleep(0.2)
@@ -94,29 +101,32 @@ def kalibreren():
     # Coordinatenstelsel aanmaken
     rob.set_freedrive(True, timeout=500)
     print("A new coordinate system will be defined from the next three points")
-    print("First point is Origin, second X, third Y")
+    print("First point is origin, second X, third Y")
     
     input("When origin circle is detected press enter")
     origin = (x,y)
+    dOrigin = (diepte/1000)
     input("Move the robot to origin and press enter")
     pose = rob.getl()
-    print("Pixelvalue origin: {}".format(origin))
+    print("Pixelvalue origin: {}{}".format(origin, dOrigin))
     print("Robotvalue origin: {}".format(pose[:3]))
     p0 = m3d.Vector(pose[:3])
     
     input("When X circle is detected press enter")
     positivex = (x,y)
+    dPositivex = (diepte/1000)
     input("Move the robot to X and press enter")
     pose = rob.getl()
-    print("Pixelvalue X: {}".format(positivex))
+    print("Pixelvalue X: {}{}".format(positivex, dPositivex))
     print("Robotvalue X: {}".format(pose[:3]))
     px = m3d.Vector(pose[:3])
     
     input("When Y circle is detected press enter")
     positivey = (x,y)
+    dPositivey = (diepte/1000)
     input("Move the robot to Y and press enter")
     pose = rob.getl()
-    print("Pixelvalue Y: {}".format(positivey))
+    print("Pixelvalue Y: {}{}".format(positivey, dPositivey))
     print("Robotvalue Y: {}".format(pose[:3]))
     py = m3d.Vector(pose[:3])
 
@@ -125,13 +135,23 @@ def kalibreren():
     time.sleep(0.2)
     input("New plane is set! Put the robot in proper place and press enter")
     rob.set_freedrive(False)
-# /////////////////////// AFSTAND PER PIXEL NOG BEPALEN!!!!!!!!!!!!!!!////////////////////////////
-    xrealworld = px[1] - p0[1]
-    yrealworld = py[0] - p0[0]
+
+    # Afstand per pixel bepalen
     xresolution = 640
     yresolution = 480
-    xmmperpix = xrealworld/xresolution
-    ymmperpix = yrealworld/yresolution
+    orXreal = px[1] - p0[1] # Afstand tussen de origin en de positieve x in meters
+    orYreal = py[0] - p0[0] # Afstand tussen de origin en de positieve y in meters
+    orXpixel = positivex[0] - origin[0] # Afstand tussen de origin en de positieve x in pixels
+    orYpixel = positivey[1] - origin[1] # Afstand tussen de origin en de positieve x in pixels
+    orXmiddenpixel = xresolution/2 - origin[0] # Afstand tussen het midden van het beeld naar de X richting in pixels
+    orYmiddenpixel = yresolution/2 - origin[1] # Afstand tussen het midden van het beeld naar de Y richting in pixels
+    orXmiddenreal = orXmiddenpixel/orXpixel * orXreal # Afstand tussen het midden van het beeld naar de X richting in meters
+    orYmiddenreal = orYmiddenpixel/orYpixel * orYreal # Afstand tussen het midden van het beeld naar de y richting in meters
+
+    xhoekrealworld = atan(orXmiddenreal/dOrigin)
+    yhoekrealworld = atan(orYmiddenreal/dOrigin)
+    xhoekpixel = xhoekrealworld/orXmiddenpixel
+    yhoekpixel = yhoekrealworld/orYmiddenpixel
 
 def oudekalibratie():
     global xmmperpix
@@ -158,21 +178,12 @@ def oudekalibratie():
     xmmperpix = xrealworld/xresolution
     ymmperpix = yrealworld/yresolution
 
-def pointcloudCallback(msg):
-    global pointcloud
-    pointcloud = msg.data
-
-def getPixelDepth(x, y):
-    global p
-
 def main():
 
     try:
         rospy.init_node('robotcalibratie')
         set_states()
         rospy.Subscriber("/ur_driver/io_states", IOStates, IOStates_callback)
-        rospy.Subscriber("/blob_properties", prop, propCallback)
-        rospy.Subscriber("/camera/depth/color/points", PointCloud2, pointcloudCallback)
 
         client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
         print("Waiting for server...")
@@ -194,13 +205,25 @@ def main():
 
         xCirkel = x
         yCirkel = y
-        xRobot = xCirkel * xmmperpix
-        yRobot = yCirkel * ymmperpix
+        dCrikel = (diepte/1000)
+
+        xnieuwehoek = xhoekpixel * abs(xresolution/2 - xCirkel)
+        ynieuwehoek = yhoekpixel * abs(yresolution/2 - yCirkel)
+        xpositieAfstandmidden = dCrikel * tan(xnieuwehoek)
+        ypositieAfstandmidden = dCrikel * tan(ynieuwehoek)
+        xmperpixel = xpositieAfstandmidden/abs(xresolution/2 - xCirkel)
+        ymperpixel = ypositieAfstandmidden/abs(yresolution/2 - yCirkel)
+        xRobot = xCirkel * xmperpixel
+        yRobot = yCirkel * ymperpixel 
+        zRobot = (dOrigin - dCrikel + 0.05) * -1
         print("x Coördinaat:")
         print(xRobot)
         print("y Coördinaat:")
         print(yRobot)
-        poseCirkel = [xRobot, yRobot, -0.100, 0, 0, 3.7]
+        print("z Coördinaat:")
+        print(zRobot)
+
+        poseCirkel = [xRobot, yRobot, zRobot, 0, 0, 3.7]
         # pose1 = [0.27491, 0.20474, 0.12119, 3.14, 0, 0]
         # pose2 = [-0.34810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
         # pose3 = [0.78021, -0.12499, 0.29962, 3.14, 0, 0]
