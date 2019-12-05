@@ -8,7 +8,7 @@ ROOT_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/abbp'
 sys.path.insert(0, ROOT_DIR)
 
 from mrcnn.config import Config
-from mrcnn import utils
+from mrcnn import utils, model as modellib
 
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
@@ -115,11 +115,6 @@ def train(model):
     dataset_train.load_object("images")
     dataset_train.prepare()
 
-    # Validation dataset
-    dataset_val = ABBPDataset()
-    dataset_val.load_object("val_images")
-    dataset_val.prepare()
-
     # Since we're using a very small dataset, and starting from
     # COCO trained weights, we don't need to train too long. Also,
     # no need to train all layers, just the heads should do it.
@@ -128,3 +123,78 @@ def train(model):
                 learning_rate=0.001,
                 epochs=30,
                 layers='heads')
+
+def validate(model):
+    dataset_val = ABBPDataset()
+    dataset_val.load_object("val_images")
+    dataset_val.prepare()
+
+    amount_correct = 0
+
+    for image in self.image_info:
+        print(image)
+
+        img_array = skimage.imread(image.path, as_gray=True)
+
+        # Use model to predict classes from validation images
+        results = model.detect([img_array], verbose=1)
+
+        r = results[0]
+
+        # Check wether there is only 1  class detected (because every
+        # validation image only contains 1 object) and if the detected class is
+        # the same as the class retrieved from the annotations
+        if len(r['class_ids']) == 1 and  image['class'] == r['class_ids'][0]:
+            amount_correct += 1
+
+    # Calculate correct percentage
+    return amount_correct / len(self.image_info) * 100
+
+
+import argparse
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Train Mask R-CNN to detect custom
+                                 objects')
+
+parser.add_argument("command", metavar="<command>", help="'train' or
+                    'inference'")
+
+parser.add_argument('--dataset', required=True, metavar="/path/to/dataset/",
+                    help='Directory of the Balloon dataset')
+
+parser.add_argument('--logs', required=False, default=DEFAULT_LOGS_DIR,
+                    metavar="path/to/logs/", help='Logs and checkpoints
+                    directory (default=logs/)')
+
+parser.add_argument('--weights', required=True, metavar="/path/to/weights.h5",
+                    help="Path to weights .h5 file or 'coco'")
+
+args = parser.parse_args()
+
+if args.command == "train":
+    config = ABBPConfig()
+else:
+    class InferenceConfig(ABBPConfig):
+        GPU_COUNT = 1
+        IMAGES_PER_GPU = 1
+        IMAGE_CHANNEL_COUNT = 1
+        MEAN PIXEL = 114.8
+    config = InferenceConfig()
+config.display()
+
+if args.command == "train":
+    model = modellib.MaskRCNN(mode="training", config=config,
+                              model_dir=args.logs)
+else:
+    model = modellib.MaskRCNN(mode="inference", config=config,
+                              model_dir=args.logs)
+
+model.load_weights(args.weights, by_name=True, exclude=["conv1", "mrcnn_class_logits","mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"])
+
+if args.command == "train":
+    train(model)
+elif args.command == "validate":
+    validate(model)
+elif args.command == "inference":
+    # TODO
