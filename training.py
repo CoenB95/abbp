@@ -46,9 +46,9 @@ class ABBPConfig(Config):
     # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 2
 
-    IMAGE_CHANNEL_COUNT = 4
+    IMAGE_CHANNEL_COUNT = 1
 
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 0.5])
+    MEAN_PIXEL = np.array([114.8])
 
 
 
@@ -56,7 +56,9 @@ class ABBPConfig(Config):
 class ABBPDataset(utils.Dataset):
 
     def load_image(self, image_id):
-        return skimage.io.imread(self.image_info[image_id]['path'], as_gray=True)
+        image = skimage.io.imread(self.image_info[image_id]['path'], as_gray=True)
+        image = (image[:, :, np.newaxis])
+        return image
 
     def load_object(self, dataset_dir):
         """Load a subset of the Objects dataset.
@@ -121,9 +123,9 @@ class ABBPDataset(utils.Dataset):
         return self.image_info[image_id]
 
 
-def test():
-    dataset = ABBPDataset()
-    dataset.load("images")
+# def test():
+#     dataset = ABBPDataset()
+#     dataset.load("images")
 
 
 def train(model):
@@ -148,4 +150,4 @@ def train(model):
                 layers='heads')
 
 
-test()
+# test()

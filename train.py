@@ -8,7 +8,7 @@ config.display()
 
 model = modellib.MaskRCNN(mode="training", config=config, model_dir="./")
 
-model.load_weights("mask_rcnn_coco.h5", by_name=True, exclude=[ "conv1", "mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"])
+model.load_weights("mask_rcnn_abbp_0020.h5", by_name=True, exclude=["conv1", "mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"])
 
 dataset_train = ABBPDataset()
 dataset_train.load_object("./datasets/images")

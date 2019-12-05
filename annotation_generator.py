@@ -35,9 +35,8 @@ def generate_annotations(directory):
     # Save the points to a json file
     images = []
     for file in glob.glob(directory + "/*.png"):
-        idx = len(file.split('/'))
-        if not file.split('/')[idx - 1].startswith("depth"):
-            images.append(Image(file))
+        # idx = len(file.split('/'))
+        images.append(Image(file))
 
     data = {}
 
@@ -63,3 +62,5 @@ def generate_annotations(directory):
 
     with open(directory + '/annotations.json', 'w') as json_file:
         json.dump(data, json_file)
+
+    print("saved annotations.json")
