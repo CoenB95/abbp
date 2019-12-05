@@ -56,14 +56,7 @@ class ABBPConfig(Config):
 class ABBPDataset(utils.Dataset):
 
     def load_image(self, image_id):
-        image = skimage.io.imread(self.image_info[image_id]['path'])
-        depth_image = skimage.io.imread(self.image_info[image_id]['depth_path'], as_gray=True)
-
-        image = skimage.color.rgba2rgb(image)
-
-        combined_image = np.dstack((image, depth_image))
-
-        return combined_image
+        return skimage.io.imread(self.image_info[image_id]['path'], as_gray=True)
 
     def load_object(self, dataset_dir):
         """Load a subset of the Objects dataset.
@@ -95,7 +88,6 @@ class ABBPDataset(utils.Dataset):
                 "ABBP",
                 image_id=a['filename'],  # use file name as a unique image id
                 path=os.path.join(dataset_dir, a['filename']),
-                depth_path=os.path.join(dataset_dir, "depth" + a['filename']),
                 width=a['width'], height=a['height'],
                 polygon=[x_points, y_points],
                 class_id=int(a['class']))
@@ -129,6 +121,11 @@ class ABBPDataset(utils.Dataset):
         return self.image_info[image_id]
 
 
+def test():
+    dataset = ABBPDataset()
+    dataset.load("images")
+
+
 def train(model):
     """Train the model."""
     # Training dataset.
@@ -150,3 +147,5 @@ def train(model):
                 epochs=30,
                 layers='heads')
 
+
+test()
