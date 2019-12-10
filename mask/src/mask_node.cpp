@@ -1,4 +1,5 @@
 #include <cv_bridge/cv_bridge.h>
+#include <mask_rcnn_ros/RectArray.h>
 #include <ros/ros.h>
 
 #include "mask_node.h"
@@ -16,14 +17,14 @@ const static string OBJECT_WEIGHTS_PATH = "mask_rcnn_abbp_0030.h5";
 int main(int argc, char** argv) {
   init(argc, argv, "mask_node");
   MaskNode masknode;
-  //roscovery.loop();
+  masknode.loop();
 }
 
 MaskNode::MaskNode() {
-
-  nodeHandle.subscribe("/camera/color/image_raw", 1, &MaskNode::onColorImage, this);
-  nodeHandle.subscribe("/camera/aligned_depth_to_color/image_raw", 1, &MaskNode::onDepthImage, this);
-
+  ROS_INFO("Masking init");
+  colorImageListener = nodeHandle.subscribe("/camera/color/image_raw", 10, &MaskNode::onColorImage, this);
+  depthImageListener = nodeHandle.subscribe("/camera/aligned_depth_to_color/image_raw", 10, &MaskNode::onDepthImage, this);
+  maskDetectionListener = nodeHandle.subscribe("/object_detector/rects", 10, &MaskNode::onMaskDetection, this);
   //image_pub_ = it_.advertise("/camerabeeld", 1);
 }
 
@@ -33,12 +34,15 @@ void MaskNode::loop() {
   Rate slowRate(1);
 
   while(ros::ok()) {
+    spinOnce();
+
     if (colorImagePtr == nullptr || depthImagePtr == nullptr) {
       ROS_INFO("Waiting for images...");
       slowRate.sleep();
-    } else {
-      fastRate.sleep();
+      continue;
     }
+
+    fastRate.sleep();
   }
   
   ROS_INFO("Masking stopped");
@@ -89,10 +93,23 @@ void MaskNode::onColorImage(const sensor_msgs::ImageConstPtr& msg) {
 
 void MaskNode::onDepthImage(const sensor_msgs::ImageConstPtr& msg) {
   try {
-    depthImagePtr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    depthImagePtr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
   } catch (cv_bridge::Exception& e) {
     ROS_ERROR("Error reading depth image: %s", e.what());
     depthImagePtr = nullptr;
     return;
   }
+}
+
+void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
+  ROS_INFO("Mask produced!");
+  if (msg->indices.size() < 1) {
+    ROS_INFO("  Nothing");
+    return;
+  }
+  ROS_INFO("  First item:");
+  ROS_INFO_STREAM("  index: " << msg->indices[0]);
+  ROS_INFO_STREAM("  label: " << msg->labels[0]);
+  ROS_INFO_STREAM("  likey: " << msg->likelihood[0]);
+  ROS_INFO_STREAM("  name : " << msg->names[0]);
 }

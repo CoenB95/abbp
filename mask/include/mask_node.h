@@ -12,15 +12,19 @@ class MaskNode {
 public:
   MaskNode();
 
+  void loop();
+
 private:
   cv_bridge::CvImagePtr colorImagePtr = nullptr;
   cv_bridge::CvImagePtr depthImagePtr = nullptr;
 
   NodeHandle nodeHandle;
 
-  Publisher instructionsPublisher;
+  Subscriber colorImageListener;
+  Subscriber depthImageListener;
+  Subscriber maskDetectionListener;
 
-  void loop();
   void onColorImage(const sensor_msgs::ImageConstPtr& msg);
   void onDepthImage(const sensor_msgs::ImageConstPtr& msg);
+  void onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg);
 };
