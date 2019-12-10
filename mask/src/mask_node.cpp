@@ -1,18 +1,13 @@
 #include <cv_bridge/cv_bridge.h>
 #include <mask_rcnn_ros/RectArray.h>
+#include <opencv2/opencv.hpp>
 #include <ros/ros.h>
+
+#include "avans-vision-lib/utils.h"
 
 #include "mask_node.h"
 
 using namespace std;
-
-const static string ROOT_DIR = "/Users/kjwdamme/School/jaar4/Project/Fase2/abbp";
-const static string PYREALSENSE_DIR = "/Users/kjwdamme/School/jaar4/Project/Fase2/librealsense/build/wrappers/python";
-//Directory to save logs and trained model
-const static string MODEL_DIR = ROOT_DIR + "/logs";
-
-//Path to Objects trained weights
-const static string OBJECT_WEIGHTS_PATH = "mask_rcnn_abbp_0030.h5";
 
 int main(int argc, char** argv) {
   init(argc, argv, "mask_node");
@@ -25,7 +20,6 @@ MaskNode::MaskNode() {
   colorImageListener = nodeHandle.subscribe("/camera/color/image_raw", 10, &MaskNode::onColorImage, this);
   depthImageListener = nodeHandle.subscribe("/camera/aligned_depth_to_color/image_raw", 10, &MaskNode::onDepthImage, this);
   maskDetectionListener = nodeHandle.subscribe("/object_detector/rects", 10, &MaskNode::onMaskDetection, this);
-  //image_pub_ = it_.advertise("/camerabeeld", 1);
 }
 
 void MaskNode::loop() {
@@ -34,7 +28,11 @@ void MaskNode::loop() {
   Rate slowRate(1);
 
   while(ros::ok()) {
+    //Needed to let ROS update its pubs 'n subs.
     spinOnce();
+
+    //Needed to let OpenCV update its windows.
+    cv::waitKey(1);
 
     if (colorImagePtr == nullptr || depthImagePtr == nullptr) {
       ROS_INFO("Waiting for images...");
@@ -46,39 +44,6 @@ void MaskNode::loop() {
   }
   
   ROS_INFO("Masking stopped");
-  /*
-
-    while True:
-        # Wait for a coherent pair of frames: depth and color
-        frames = pipeline.wait_for_frames()
-        color_frame = frames.get_color_frame()
-        if not color_frame:
-            continue
-
-        # Convert images to numpy arrays
-        color_image = np.asanyarray(color_frame.get_data())
-
-        results = model.detect([color_image], verbose=1)
-
-        # Display results
-        ax = get_ax(1)
-        r = results[0]
-        print(r['class_ids'])
-        image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
-                                        class_names, r['scores'], title="Predictions")
-
-        images = np.hstack((color_image, image))
-
-        # Show images
-        cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
-        cv2.imshow('RealSense', images)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-
-    pipeline.stop()
-    cv2.destroyAllWindows()*/
 }
 
 void MaskNode::onColorImage(const sensor_msgs::ImageConstPtr& msg) {
@@ -107,9 +72,18 @@ void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
     ROS_INFO("  Nothing");
     return;
   }
+
   ROS_INFO("  First item:");
-  ROS_INFO_STREAM("  index: " << msg->indices[0]);
-  ROS_INFO_STREAM("  label: " << msg->labels[0]);
-  ROS_INFO_STREAM("  likey: " << msg->likelihood[0]);
-  ROS_INFO_STREAM("  name : " << msg->names[0]);
+  ROS_INFO_STREAM("  class_id: " << msg->labels[0] << " (" << msg->names[0] << ")");
+  ROS_INFO_STREAM("  score: " << msg->likelihood[0]);
+  geometry_msgs::Point32 tl = msg->polygon[0].polygon.points[0];
+  geometry_msgs::Point32 br = msg->polygon[0].polygon.points[1];
+
+  cv::Mat masked_image(colorImagePtr->image);
+  cv::rectangle(masked_image, cv::Point2f(tl.x, tl.y), cv::Point2f(br.x, br.y), Colors::RED);
+  ostringstream s;
+  s << msg->names[0] << " " << fixed << setprecision(3) << msg->likelihood[0];
+  ROS_INFO("%s", s.str().c_str());
+  cv::putText(masked_image, s.str(), cv::Point(tl.x, tl.y - 8), cv::FONT_HERSHEY_SIMPLEX , 0.5, Colors::WHITE);
+  ImageUtils::window(masked_image, "Result", true);
 }

@@ -124,9 +124,7 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/mask.cpp
-# )
+add_library(avans-vision-lib src/avans-vision-lib/utils.cpp src/avans-vision-lib/avansvisionlib.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -150,6 +148,8 @@ add_dependencies(mask_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(mask_node ${catkin_LIBRARIES})
+target_link_libraries(mask_node ${OpenCV_LIBS})
+target_link_libraries(mask_node avans-vision-lib)
 
 #############
 ## Install ##
