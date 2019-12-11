@@ -92,6 +92,8 @@ void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
   int h = colorImagePtr->image.rows;
   cv::Mat masked_image(savedColorImagePtr->image);
 
+  vector<Color> randomColors = ColorUtils::randomColors(msg->labels.size());
+
   for (int i = 0; i < msg->labels.size(); i++) {
     //ROS_INFO_STREAM("Image (mask) size: " << mask.rows * mask.cols << " = " << mask.rows << "x" << mask.cols);
     //ROS_INFO_STREAM("Indices size     : " << msg->indices.size());
@@ -99,7 +101,7 @@ void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
     geometry_msgs::Point32 tl = msg->polygon[i].polygon.points[0];
     geometry_msgs::Point32 br = msg->polygon[i].polygon.points[1];
 
-    cv::rectangle(masked_image, cv::Point2f(tl.x, tl.y), cv::Point2f(br.x, br.y), Colors::RED);
+    cv::rectangle(masked_image, cv::Point2f(tl.x, tl.y), cv::Point2f(br.x, br.y), randomColors[i]);
 
     int si = i * w * h;
     int ei = (i + 1) * w * h - 1;
@@ -112,8 +114,9 @@ void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
     cv::Mat mask(h, w, CV_16S, (void*)(sub16S.data()));
 
     //ImageUtils::forEachPixel<Color>(masked_image, masked_image, [&](cv::Point pc, Color px) { return ImageUtils::getPixel16S(mask, pc) == 0 ? px : Colors::ORANGE; });
-    ImageUtils::forEachPixel<Vec3b>(masked_image, masked_image, [&](cv::Point pc, Vec3b px) {
-       return ImageUtils::getPixel16S(mask, pc) == 0 ? px : Vec3b(0, 127, 255);
+    ImageUtils::forEachPixel<Color>(masked_image, masked_image, [&](cv::Point pc, Color px) {
+       return ImageUtils::getPixel<int16_t>(mask, pc) == 0 ? px : px * (1 - 0.5) + randomColors[i] * 0.5;
+       //image[:, :, c] * (1 - alpha) + alpha * color[c] * 255
     });
     /*ImageUtils::forEachPixel<Color>(masked_image, masked_image, [&](cv::Point pc, Color px) {
       int pv = ImageUtils::getPixel16S(mask, pc);
