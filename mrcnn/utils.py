@@ -235,7 +235,6 @@ def box_refinement(box, gt_box):
 ############################################################
 #  Dataset
 ############################################################
-
 class Dataset(object):
     """The base class for dataset classes.
     To use it, create a new class that adds functions specific to the dataset

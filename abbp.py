@@ -20,24 +20,24 @@ from mrcnn import visualize
 import mrcnn.model as modellib
 
 import training
+from training import ABBPConfig, ABBPDataset
 
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
 # Path to Objects trained weights
-OBJECT_WEIGHTS_PATH = "mask_rcnn_abbp_0030.h5"
+OBJECT_WEIGHTS_PATH = "mask_rcnn_abbp_0016.h5"
 
 config = training.ABBPConfig()
 
 
 # Override the training configurations with a few
 # changes for inferencing.
-class InferenceConfig(config.__class__):
-    # Run detection on one image at a time
+class InferenceConfig(ABBPConfig):
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
-    IMAGE_CHANNEL_COUNT = 4
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 0.5])
+    IMAGE_CHANNEL_COUNT = 1
+    MEAN_PIXEL = np.array([114.8])
 
 
 config = InferenceConfig()
@@ -49,11 +49,11 @@ config.display()
 # GPU for training.
 DEVICE = "/cpu:0"  # /cpu:0 or /gpu:0
 
-#with tf.device(DEVICE):
-#     model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR,
-#                              config=config)
+with tf.device(DEVICE):
+    model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR,
+                             config=config)
 
-# model.load_weights(OBJECT_WEIGHTS_PATH, by_name=True)
+model.load_weights(OBJECT_WEIGHTS_PATH, by_name=True)
 
 class_names = [
     "BG",
@@ -111,11 +111,13 @@ def visualize_mask(image, boxes, masks, class_ids, class_names, scores=None,
 
     return masked_image
 
+
 def rgb(color):
     rgb = []
     for v in list(color):
        rgb.append(v * 255)
     return rgb
+
 
 def test():
     image = cv2.imread("test.png")
@@ -130,6 +132,7 @@ def test():
     cv2.imshow("predictions", masked_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
 
 def main():
     pipeline = rs.pipeline()
@@ -155,33 +158,18 @@ def main():
         colorizer.set_option(rs.option.color_scheme, 2)
         colorized_depth = np.asanyarray(colorizer.colorize(depth_frame).get_data())
 
-        align = rs.align(rs.stream.color)
-        frameset = align.process(frames)
-
-        aligned_depth_frame = frameset.get_depth_frame()
-        colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
-        converted_depth = skimage.color.rgb2gray(colorized_depth)
-        stacked = np.dstack((color_image, colorized_depth))
-
-        print(stacked.shape)
-
-        # images = np.hstack((stacked[:, :, :3], colorized_depth[:, :, 3]))
-
-        #results = model.detect([color_image], verbose=1)
+        results = model.detect([colorized_depth], verbose=1)
 
         # Display results
-        #ax = get_ax(1)
-        #r = results[0]
-        #print(r['class_ids'])
-        #image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
-        #                                class_names, r['scores'], title="Predictions")
+        r = results[0]
+        print(r['class_ids'])
+        image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
+                                       class_names, r['scores'], title="Predictions")
 
         # images = np.hstack((converted_depth, colorized_depth))
 
         # Show images
-        cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
-        cv2.imshow('converted', converted_depth)
-        cv2.imshow('Not converted', colorized_depth)
+        cv2.imshow('RealSense', image)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -189,6 +177,7 @@ def main():
 
     pipeline.stop()
     cv2.destroyAllWindows()
+
 
 main()
 
