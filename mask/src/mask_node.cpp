@@ -84,55 +84,37 @@ void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
     return;
   }
 
-  //ROS_INFO("  First item:");
-  //ROS_INFO_STREAM("  class_id: " << msg->labels[0] << " (" << msg->names[0] << ")");
-  //ROS_INFO_STREAM("  score: " << msg->likelihood[0]);
-
-  int w = colorImagePtr->image.cols;
-  int h = colorImagePtr->image.rows;
   cv::Mat masked_image(savedColorImagePtr->image);
 
+  int imageWidth = savedColorImagePtr->image.cols;
+  int imageHeight = savedColorImagePtr->image.rows;
+  Point textOffset(0, - 8);
   vector<Color> randomColors = ColorUtils::randomColors(msg->labels.size());
 
   for (int i = 0; i < msg->labels.size(); i++) {
-    //ROS_INFO_STREAM("Image (mask) size: " << mask.rows * mask.cols << " = " << mask.rows << "x" << mask.cols);
-    //ROS_INFO_STREAM("Indices size     : " << msg->indices.size());
+    Point tl = Point(msg->polygon[i].polygon.points[0].x, msg->polygon[i].polygon.points[0].y);
+    Point br = Point(msg->polygon[i].polygon.points[1].x, msg->polygon[i].polygon.points[1].y);
+    Point objectPosition(tl);
+    Rect objectSize(tl, br);
 
-    geometry_msgs::Point32 tl = msg->polygon[i].polygon.points[0];
-    geometry_msgs::Point32 br = msg->polygon[i].polygon.points[1];
-
-    cv::rectangle(masked_image, cv::Point2f(tl.x, tl.y), cv::Point2f(br.x, br.y), randomColors[i]);
-
-    int si = i * w * h;
-    int ei = (i + 1) * w * h - 1;
-    ROS_INFO_STREAM("Masking #" << i << ", index " << si << " till " << ei << " of " << msg->indices.size());
+    int si = i * imageWidth * imageHeight;
+    int ei = (i + 1) * imageWidth * imageHeight - 1;
     vector<int16_t> sub16S;
     for (int i = si; i < ei; i++) {
       sub16S.push_back(msg->indices[i]);
     }
-    //vector<int64_t> sub(msg->indices.begin() + si, msg->indices.begin() + ei);
-    cv::Mat mask(h, w, CV_16S, (void*)(sub16S.data()));
+    cv::Mat objectMask(imageHeight, imageWidth, CV_16S, (void*)(sub16S.data()));
 
-    //ImageUtils::forEachPixel<Color>(masked_image, masked_image, [&](cv::Point pc, Color px) { return ImageUtils::getPixel16S(mask, pc) == 0 ? px : Colors::ORANGE; });
     ImageUtils::forEachPixel<Color>(masked_image, masked_image, [&](cv::Point pc, Color px) {
-       return ImageUtils::getPixel<int16_t>(mask, pc) == 0 ? px : px * (1 - 0.5) + randomColors[i] * 0.5;
-       //image[:, :, c] * (1 - alpha) + alpha * color[c] * 255
+       return ImageUtils::getPixel<int16_t>(objectMask, pc) == 0 ? px : px * (1 - 0.5) + randomColors[i] * 0.5;
     });
-    /*ImageUtils::forEachPixel<Color>(masked_image, masked_image, [&](cv::Point pc, Color px) {
-      int pv = ImageUtils::getPixel16S(mask, pc);
-      if (pv == 0) {
-        //ROS_INFO("Pox ");
-        return px;
-      } else {
-        ROS_INFO("Pix ");
-        return Colors::ORANGE;
-      }
-    });*/
+
+    cv::rectangle(masked_image, objectSize, randomColors[i]);
 
     ostringstream s;
-    s << msg->names[i] << " " << fixed << setprecision(3) << msg->likelihood[i];
-    ROS_INFO("%s", s.str().c_str());
-    cv::putText(masked_image, s.str(), cv::Point(tl.x, tl.y - 8), cv::FONT_HERSHEY_SIMPLEX , 0.5, Colors::WHITE);
+    s << msg->names[i] << " (" << fixed << setprecision(3) << msg->likelihood[i] << ")";
+    cv::putText(masked_image, s.str(), tl + textOffset, cv::FONT_HERSHEY_SIMPLEX , 0.5, Colors::WHITE);
+    ROS_INFO("  %s", s.str().c_str());
   }
 
   ImageUtils::window(masked_image, "Result", true);
