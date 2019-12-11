@@ -12,5 +12,6 @@ test_images/
 *.so
 *.swp
 *.swo
+*.swn
 test.png
 datasets/
