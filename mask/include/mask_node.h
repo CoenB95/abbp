@@ -17,12 +17,15 @@ public:
 private:
   cv_bridge::CvImagePtr colorImagePtr = nullptr;
   cv_bridge::CvImagePtr depthImagePtr = nullptr;
+  cv_bridge::CvImagePtr savedColorImagePtr = nullptr;
 
   NodeHandle nodeHandle;
 
   Subscriber colorImageListener;
   Subscriber depthImageListener;
   Subscriber maskDetectionListener;
+
+  Publisher colorImagePublisher;
 
   void onColorImage(const sensor_msgs::ImageConstPtr& msg);
   void onDepthImage(const sensor_msgs::ImageConstPtr& msg);
