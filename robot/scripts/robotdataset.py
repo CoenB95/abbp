@@ -9,6 +9,7 @@ import sys
 import time
 import urx
 import numpy as np
+import csv
 
 from camera_node.msg import prop
 from control_msgs.msg import FollowJointTrajectoryAction
@@ -91,6 +92,7 @@ def saveValues(tabel):
     robotpos = rob.getl()
     robotwaardes = robotpos[:3]
     pixelwaardes = [x, y, diepte]
+    np.set_printoptions(suppress=True)
     robotpixel = np.append(pixelwaardes, robotwaardes)
     tabel = np.vstack([tabel, robotpixel])
     return tabel
@@ -99,16 +101,16 @@ def saveValues(tabel):
 def main():
 
     try:
+        tcp = [0, -0.100, 0, 0, 0, 0]
+        rob.set_tcp(tcp)
+        time.sleep(0.2)
         global xopschuif
         global yopschuif
         global zopschuif
 
-        xopschuif = 0.02 # 1 mm opschuiven
-        yopschuif = 0.02 # 1 mm opschuiven
-        zopschuif = 0.02 # 1 mm opschuiven
-        x = 0
-        y = 0 
-        diepte = 0
+        xopschuif = 0.02 # 5 mm opschuiven
+        yopschuif = 0.02 # 5 mm opschuiven
+        zopschuif = 0.02 # 5 mm opschuiven
         rospy.init_node('robotcalibratie')
         set_states()
         rospy.Subscriber("/ur_driver/io_states", IOStates, IOStates_callback)
@@ -130,9 +132,9 @@ def main():
         # rospy.spin()
         
         tabel = np.zeros(shape=(1,6))
-        input("Press enter to start")
+        input("Press the start button to start and then press enter")
+        currentpose = rob.getl()
         while True: # Opschuiven in de x richting van het robotassenstelsel
-            currentpose = rob.getl()
             currentpose[0] += xopschuif
             rob.movel(currentpose, acc=a, vel=v, wait=False)
             time.sleep(0.2)
@@ -140,11 +142,10 @@ def main():
                 if rob.is_program_running() == False:
                     break
 
-            if x > 0 and y > 0:
+            if x > 0 and y > 0 and diepte >0:
                 tabel = saveValues(tabel)
 
-            if currentpose[0] < 0.370 or currentpose[0] > 0.750: # Wanneer een hele rij is afgelegd, in de Y een beetje opschuiven en achteruit bewgen in X
-                currentpose = rob.getl()
+            if currentpose[0] < 0.422 or currentpose[0] > 0.760: # Wanneer een hele rij is afgelegd, in de Y een beetje opschuiven en achteruit bewgen in X
                 currentpose[1] -= yopschuif
                 rob.movel(currentpose, acc=a, vel=v, wait=False)
                 time.sleep(0.2)
@@ -152,20 +153,25 @@ def main():
                     if rob.is_program_running() == False:
                         break
 
-                if x > 0 and y > 0:
+                if x > 0 and y > 0 and diepte > 0:
                     tabel = saveValues(tabel)
 
-                if currentpose[1] < -0.200:
-                    currentpose = rob.getl()
-                    currentpose[2] -= zopschuif
+                if currentpose[1] < -0.170 or currentpose[1] > 0.161:
+                    currentpose[2] += zopschuif
                     yopschuif = yopschuif * -1 # yopschuif omklappen zodat hij weer de andere kant op gaat
                     rob.movel(currentpose, acc=a, vel=v, wait=False)
                     time.sleep(0.2)
                     while True:
                         if rob.is_program_running() == False:
                             break
+                    print(tabel)
+                    if x > 0 and y > 0 and diepte > 0:
+                        tabel = saveValues(tabel)
                     
                 xopschuif = xopschuif * -1 # xopschuif omklappen zodat hij weer de andere kant op gaat
+            if (knop == False) or currentpose[2] > 0.2:
+                np.savetxt('tabelklein.csv', tabel, '%19.6f', delimiter= ',')
+                break
                 
             
 
