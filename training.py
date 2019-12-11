@@ -12,9 +12,10 @@ sys.path.insert(0, ROOT_DIR)
 from mrcnn.config import Config
 from mrcnn import utils, model as modellib, visualize
 import annotation_generator
-
-PYREALSENSE_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/librealsense/build/wrappers/python'
+PYREALSENSE_DIR = ROOT_DIR + '/librealsense/build/wrappers/python'
+# PYREALSENSE_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/librealsense/build/wrappers/python'
 sys.path.append(PYREALSENSE_DIR)
+print(PYREALSENSE_DIR)
 
 import pyrealsense2 as rs
 
@@ -43,7 +44,7 @@ class ABBPConfig(Config):
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # Background + balloon
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 1
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.4
@@ -59,10 +60,10 @@ class ABBPConfig(Config):
 # Dataset class ABBPDataset(utils.Dataset):
 class ABBPDataset(utils.Dataset):
 
-    # def load_image(self, image_id):
-    #     image = skimage.io.imread(self.image_info[image_id]['path'], as_gray=True)
-    #     image = image[:, :, np.newaxis]
-    #     return image
+    def load_image(self, image_id):
+        image = skimage.io.imread(self.image_info[image_id]['path'], as_gray=True)
+        image = image[:, :, np.newaxis]
+        return image
 
     def load_object(self, dataset_dir):
         """Load a subset of the Objects dataset.
@@ -217,8 +218,8 @@ def train(model):
     dataset_train.prepare()
 
     dataset_val = ABBPDataset()
-    dataset_val.load_object("datasets/val_images2")
-    dataset_train.prepare()
+    dataset_val.load_object("datasets/val_images")
+    dataset_val.prepare()
 
     # Since we're using a very small dataset, and starting from
     # COCO trained weights, we don't need to train too long. Also,
