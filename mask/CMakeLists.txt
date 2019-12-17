@@ -124,7 +124,12 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(avans-vision-lib src/avans-vision-lib/utils.cpp src/avans-vision-lib/avansvisionlib.cpp)
+add_library(
+  avans-vision-lib
+    src/avans-vision-lib/colors.cpp
+    src/avans-vision-lib/images.cpp
+    src/avans-vision-lib/utils.cpp
+    src/avans-vision-lib/avansvisionlib.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

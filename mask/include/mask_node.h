@@ -1,5 +1,6 @@
 #pragma once
 
+#include <camera_node/prop.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -16,8 +17,9 @@ public:
 
 private:
   cv_bridge::CvImagePtr colorImagePtr = nullptr;
+  cv_bridge::CvImagePtr colorImageSnapshotPtr = nullptr;
   cv_bridge::CvImagePtr depthImagePtr = nullptr;
-  cv_bridge::CvImagePtr savedColorImagePtr = nullptr;
+  cv_bridge::CvImagePtr depthImageSnapshotPtr = nullptr;
 
   NodeHandle nodeHandle;
 
@@ -26,6 +28,9 @@ private:
   Subscriber maskDetectionListener;
 
   Publisher colorImagePublisher;
+  Publisher propPublisher;
+
+  vector<camera_node::prop> props;
 
   void onColorImage(const sensor_msgs::ImageConstPtr& msg);
   void onDepthImage(const sensor_msgs::ImageConstPtr& msg);
