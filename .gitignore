@@ -12,5 +12,6 @@ logs/
 test_images/
 *.so
 *.swp
+*.swo
 test.png
 datasets/

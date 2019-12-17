@@ -1,0 +1,22 @@
+<launch>
+  <arg name="detection" default="false"/>
+  <arg name="view" default="false"/>
+
+  <!-- MaskRCNN Detection Node -->
+  <group if="$(arg detection)">
+    <include file="$(find mask_rcnn_ros)/launch/mask_rcnn_ros.launch">
+      <arg name="image" value="/mask_node/camera/color/image_raw"/>
+      <arg name="model" value="$(find abbp_mask)/models/ABBP MaskRCNN v1.h5"/>
+      <arg name="class_labels" value="$(find abbp_mask)/models/class.txt"/>
+      <arg name="detection_threshold" value="0.9"/>
+      <arg name="is_service" value="false"/>
+      <arg name="debug" value="false"/>
+    </include>
+  </group>
+
+  <!-- Blobdetection -->
+  <group if="$(arg view)">
+      <node pkg="abbp_mask" type="mask_node" name="mask_node" output="screen"/>
+  </group>
+
+</launch>

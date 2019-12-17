@@ -1,0 +1,3 @@
+[submodule "mask/src/avans-vision-lib"]
+	path = mask/src/avans-vision-lib
+	url = https://github.com/coenb95/avans-vision-lib
