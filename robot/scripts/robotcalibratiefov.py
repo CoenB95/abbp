@@ -8,6 +8,7 @@ import rospy
 import sys
 import time
 import urx
+import math
 
 from camera_node.msg import prop
 from control_msgs.msg import FollowJointTrajectoryAction
@@ -97,16 +98,21 @@ def coordinates():
         rob.set_freedrive(True, timeout=300)
         rob.new_csys_from_xpy()
         rob.set_freedrive(False)
-        xrealworld = 0.530
-        yrealworld = 0.430
-        xresolution = 640
-        yresolution = 480
-        xmmperpix = xrealworld/xresolution
-        ymmperpix = yrealworld/yresolution
+        HorFov = 69.4 * pi/180 #Graden naar radialen
+        VerFov = 42.5 * pi/180
+        HorPixelRes = 640
+        VerPixelRes = 480
+        HoogteObject = 0.460
+        xmmperpix = ((math.tan(HorFov/2) * HoogteObject) * 2)/HorPixelRes
+        ymmperpix = ((math.tan(VerFov/2) * HoogteObject) * 2)/VerPixelRes
         xCirkel = x1
         yCirkel = y1
         xRobot = xCirkel * xmmperpix
         yRobot = yCirkel * ymmperpix
+        print("x Coördinaat:")
+        print(xRobot)
+        print("y Coördinaat:")
+        print(yRobot)
 
 def pointcloudCallback(msg):
     global pointcloud
@@ -127,11 +133,16 @@ def main():
     global bakleeg
   
     try:
-        set_states()
         rospy.init_node('robotcalibratie')
+        print("test2")
+        set_states()
+        print("test3")
+        print("test4")
         rospy.Subscriber("/ur_driver/io_states", IOStates, IOStates_callback)
-        # rospy.Subscriber("/blob_properties", prop, propCallback)
-        # rospy.Subscriber("/camera/depth/color/points", PointCloud2, pointcloudCallback)
+        print("test5")
+        rospy.Subscriber("/blob_properties", prop, propCallback)
+        rospy.Subscriber("/camera/depth/color/points", PointCloud2, pointcloudCallback)
+        print("test6")
         client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
         print("Waiting for server...")
         client.wait_for_server()
@@ -142,124 +153,63 @@ def main():
             prefix = str(parameters)[index+len("prefix': '"):(index+len("prefix': '")+str(parameters)[index+len("prefix': '"):-1].find("'"))]
             for i, name in enumerate(JOINT_NAMES):
                 JOINT_NAMES[i] = prefix + name
-
+       
         print(inp)
 
-        pose1 = [0.27491, 0.20474, 0.12119, 3.14, 0, 0]
-        pose2 = [-0.34810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
-        pose3 = [0.78021, -0.12499, 0.29962, 3.14, 0, 0]
+        coordinates()
+
+        poseCirkel = [xRobot, yRobot, -0.100, 0, 0, 3.7]
+        # pose1 = [0.27491, 0.20474, 0.12119, 3.14, 0, 0]
+        # pose2 = [-0.34810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
+        # pose3 = [0.78021, -0.12499, 0.29962, 3.14, 0, 0]
+        # pose4 = [0, 0, 0, 3.14, 0, 0]
         v = 0.3
         a = 0.2
+        # rospy.spin()
         
+        
+
         while (True):
             if (inp == True):
-                print ("knop is in")
+                print("knop is in")
             while (inp == True):
-                rob.movel(pose1, acc=a, vel=v, wait=False)
+                rob.movel(poseCirkel, acc=a, vel=v, wait=False)
                 time.sleep(0.3)
                 while True:
                     if not rob.is_program_running():
                         break
-             
-                rob.movel(pose2, acc=a, vel=v, wait=False)
-                time.sleep(0.3)
-                while True:
-                    if not rob.is_program_running():
-                        break
-
-                rob.movel(pose1, acc=a, vel=v, wait=False)
-                time.sleep(0.3)
-                while True:
-                    if not rob.is_program_running():
-                        break
-
-                rob.movel(pose3, acc=a, vel=v, wait=False)
-                time.sleep(0.3)
-                while True:
-                    if not rob.is_program_running():
-                        break
-
-                rob.movel(pose1, acc=a, vel=v, wait=False)
-                time.sleep(0.3)
-                while True:
-                    if not rob.is_program_running():
-                        break
-
+                # print "Test1"
+                # rob.movel(pose2, acc=a, vel=v, wait=False)
+                # time.sleep(0.3)
+                # while True:
+                #     if not rob.is_program_running():
+                #         break
+                # print "Test2"
+                # rob.movel(pose4, acc=a, vel=v, wait=False)
+                # time.sleep(0.3)
+                # while True:
+                #     if not rob.is_program_running():
+                #         break
+                # print "Test3"
+                # rob.movel(pose3, acc=a, vel=v, wait=False)
+                # time.sleep(0.3)
+                # while True:
+                #     if not rob.is_program_running():
+                #         break
+                # print "Test4"
+                # rob.movel(pose1, acc=a, vel=v, wait=False)
+                # time.sleep(0.3)
+                # while True:
+                #     if not rob.is_program_running():
+                #         break
+                print("Test5")
                 break
        
-    # set_digital_out(0, False)
-    # set_digital_out(1, False)
-    # set_digital_out(2, True)
-    #     while (True):
-    #     begin = True
-    #     Found = False
-
-    #         if (inp == True):
-    #             while (begin == True):
-    #         set_digital_out(0, True)
-    #         set_digital_out(2, False)
-    #         set_digital_out(1, False)
-    #         move_home()
-    #         print "1"                
-    #         pub.publish(std_msgs.msg.String("TRUE"))
-            
-    #         print "2"
-    #         while (Found == False):
-    #         time.sleep(0.01)
-    #         move_repeated()
-    #         Found = False
-    #         cart()  
-
-    #         if (bakleeg == True):
-    #         set_digital_out(0, False)
-    #         set_digital_out(1, True)
-    #         while (inp == True):
-    #             time.sleep(0.01)
-    #         set_digital_out(2, True)
-    #         set_digital_out(1, False)           
-    #         move_home()
-    #         while (inp == False):
-    #             time.sleep(0.01)
-                
-    #             break 
-            
-    #                 time.sleep(3)
-    #                 move_vision_place()
-    #                 #while (True):
-    #         #time.sleep(5)
-    #         pub.publish(std_msgs.msg.String("TRUE"))
-    #                 move_repeated1()
-            
-    #         begin = False
-    #     while (begin == False and inp == True):
-    #          set_digital_out(0, True)
-    #          set_digital_out(2, False)
-    #          set_digital_out(1, False)           
-    #          move_home()
-    #          move_repeated()
-    #          while (Found == False):
-    #          time.sleep(0.01)   
-    #          Found = False                
-    #          cart()
-    #          if (bakleeg == True):
-    #          set_digital_out(0, False)
-    #          set_digital_out(1, True)
-    #                  while (inp == True):
-    #              time.sleep(0.01)
-    #          set_digital_out(1, False)
-    #              set_digital_out(2, True)                
-    #          move_home()
-    #              while (inp == False):
-    #              time.sleep(0.01)
-    #          begin = True
-    #          break
-    #          time.sleep(4)
-    #                  move_vision_place()
-    #          pub.publish(std_msgs.msg.String("TRUE"))
-    #          move_repeated1()
-    #             set_digital_out(0, False)
-    #         set_digital_out(1, False)
-    #         set_digital_out(2, True)
+    except rospy.ROSInterruptException:
+        print("ERROR: ROS interrupted!")
+        pass
+    except Exception as e:
+        print("CRITICAL ERROR: %s" %e)
     finally:
         rob.close()
         sys.exit()
