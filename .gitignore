@@ -1,17 +1,13 @@
+# Ignore personal IDE preferences files
 .vscode/
 .idea/
 .DS_Store
+
 .ipynb_checkpoints/
-robot/.vscode/*
-images/
-masks/
-val_images/
-logs/
 **/__pycache__/
-*.h5
-test_images/
-*.so
-*.swp
-*.swo
-test.png
 datasets/
+logs/
+
+# Ignore generated (CNN-related) files.
+mask/models/*.h5
+robot/scripts/*.csv
