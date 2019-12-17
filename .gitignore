@@ -1,3 +1,4 @@
+.vscode/
 .idea/
 .DS_Store
 .ipynb_checkpoints/
@@ -11,5 +12,6 @@ logs/
 test_images/
 *.so
 *.swp
+*.swo
 test.png
 datasets/

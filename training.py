@@ -19,6 +19,8 @@ sys.path.append(PYREALSENSE_DIR)
 print(PYREALSENSE_DIR)
 
 import pyrealsense2 as rs
+from mrcnn import utils
+import annotation_generator
 
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
@@ -52,8 +54,6 @@ class ABBPConfig(Config):
     # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 2
 
-    # MEAN_PIXEL = np.array([114.8, 114.8, 114.8])
-
 
 # Dataset class ABBPDataset(utils.Dataset):
 class ABBPDataset(utils.Dataset):
@@ -73,6 +73,10 @@ class ABBPDataset(utils.Dataset):
         if not os.path.isfile(os.path.join(dataset_dir, "annotations.json")):
             annotation_generator.generate_annotations(dataset_dir)
 
+        # Create annotations
+        if not os.path.isfile(os.path.join(dataset_dir, "annotations.json")):
+            annotation_generator.generate_annotations(dataset_dir)
+
         # Load annotations
         annotations = json.load(open(os.path.join(dataset_dir, "annotations.json")))
         annotations = list(annotations.values())  # don't need the dict keys
@@ -86,6 +90,7 @@ class ABBPDataset(utils.Dataset):
                 "ABBP",
                 image_id=a['filename'],  # use file name as a unique image id
                 path=os.path.join(dataset_dir, a['filename']),
+                depth_path=os.path.join(dataset_dir, "depth" + a['filename']),
                 width=a['width'], height=a['height'],
                 polygon=[x_points, y_points],
                 class_id=int(a['class']))
@@ -232,7 +237,6 @@ def train(model):
                 epochs=30,
                 layers='heads')
 
-
 def inference(model):
     class_names = [
         "BG",
@@ -263,15 +267,15 @@ def inference(model):
 
         color_image = np.asanyarray(color_frame.get_data())
 
-        colorizer = rs.colorizer()
-        colorizer.set_option(rs.option.color_scheme, 2)
+        # colorizer = rs.colorizer()
+        # colorizer.set_option(rs.option.color_scheme, 2)
         # colorized_depth = np.asanyarray(colorizer.colorize(depth_frame).get_data())
 
-        align = rs.align(rs.stream.color)
-        frameset = align.process(frames)
+        # align = rs.align(rs.stream.color)
+        # frameset = align.process(frames)
 
-        aligned_depth_frame = frameset.get_depth_frame()
-        colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
+        # aligned_depth_frame = frameset.get_depth_frame()
+        # colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
 
         # depth_gray = cv2.cvtColor(colorized_depth, cv2.COLOR_BGR2GRAY)
         #
@@ -281,7 +285,7 @@ def inference(model):
         #
         # dst = cv2.cvtColor(dst, cv2.COLOR_GRAY2RGB)
 
-        inference_results = model.detect([colorized_depth], verbose=1)
+        inference_results = model.detect([color_image], verbose=1)
 
         # Display results
         r = inference_results[0]
@@ -312,8 +316,6 @@ def image(model):
 
     image = cv2.imread("img.png")
 
-    # image = image[:, :, np.newaxis]
-
     results = model.detect([image], verbose=1)
 
     r = results[0]
@@ -336,10 +338,6 @@ def validate(model):
         print(image)
 
         img_array = cv2.imread(image['path'])
-
-        # cv2.imshow("test", img_array)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
 
         # Use model to predict classes from validation images
         results = model.detect([img_array], verbose=1)

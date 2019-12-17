@@ -1,37 +1,27 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import rospy
-import urx
-import logging
-import roslib
-import sys
 import actionlib
+import logging
+import math3d as m3d
+import roslib
+import rospy
+import sys
 import time
+import urx
 
-roslib.load_manifest('ur_driver')
-#roslib.load_manifest('robotcalibratie')
-
-from control_msgs.msg import *
+from camera_node.msg import prop
+from control_msgs.msg import FollowJointTrajectoryAction
+from math import pi
 from sensor_msgs.msg import JointState
+from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import Header,Float64MultiArray
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
-from camera_node.msg import prop
-from ur_msgs.srv import *
-from ur_msgs.msg import *
-
-from math import pi
-import math3d as m3d
+from ur_msgs.msg import IOStates
+from ur_msgs.srv import SetIO
 
 
-#import copy
-#import moveit_commander
-#from copy import deepcopy
-#import geometry_msgs.msg
-#import moveit_msgs.msg
-
-from ur_driver import *
-from ur_driver.io_interface import*
+roslib.load_manifest('ur_driver')
 
 rob = urx.Robot("172.22.22.2")
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
@@ -49,7 +39,7 @@ py = m3d.Vector(ypositief[:3])
 newPlane = m3d.Transform.new_from_xyp(px - p0, py - p0, p0)
 rob.set_csys(newPlane)
 time.sleep(0.3)
-raw_input("New plane is set! press enter")
+input("New plane is set! press enter")
 
 
 
@@ -69,8 +59,8 @@ ANALOG_TOLERANCE_VALUE = 0.01
 def set_digital_out(pin, val):
     try:
         set_io(FUN_SET_DIGITAL_OUT, pin, val)
-    except rospy.ServiceException, e:
-        print "Service call failed: %s"%e
+    except rospy.ServiceException as e:
+        print("Service call failed: %s"%e)
     
 def set_states():
     rospy.wait_for_service('/ur_driver/set_io')
@@ -82,10 +72,10 @@ def IOStates_callback(msg):
     global inp
     if (msg.digital_in_states[1].state == True):
         inp = True
-        print inp
+        print(inp)
     if (msg.digital_in_states[0].state == True):
         inp = False
-        print inp
+        print(inp)
 
 def propCallback(msg):
     global x
@@ -100,9 +90,9 @@ def coordinates():
     global yRobot
     x1 = x
     y1 = y
-    print "coordinaten:"
-    print x1
-    print y1
+    print("coordinaten:")
+    print(x1)
+    print(y1)
     if (x > 0 and y > 0):
         rob.set_freedrive(True, timeout=300)
         rob.new_csys_from_xpy()
@@ -117,7 +107,17 @@ def coordinates():
         yCirkel = y1
         xRobot = xCirkel * xmmperpix
         yRobot = yCirkel * ymmperpix
+        print("x Coördinaat:")
+        print(xRobot)
+        print("y Coördinaat:")
+        print(yRobot)
 
+def pointcloudCallback(msg):
+    global pointcloud
+    pointcloud = msg.data
+
+def getPixelDepth(x, y):
+    global p
 
 def main():
 
@@ -132,18 +132,19 @@ def main():
   
     try:
         rospy.init_node('robotcalibratie')
-        print "test2"
+        print("test2")
         set_states()
-        print "test3"
-        print "test4"
+        print("test3")
+        print("test4")
         rospy.Subscriber("/ur_driver/io_states", IOStates, IOStates_callback)
-        print "test5"
+        print("test5")
         rospy.Subscriber("/blob_properties", prop, propCallback)
-        print "test6"
+        rospy.Subscriber("/camera/depth/color/points", PointCloud2, pointcloudCallback)
+        print("test6")
         client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
-        print "Waiting for server..."
+        print("Waiting for server...")
         client.wait_for_server()
-        print "Connected to server"
+        print("Connected to server")
         parameters = rospy.get_param(None)
         index = str(parameters).find('prefix')
         if (index > 0):
@@ -151,15 +152,15 @@ def main():
             for i, name in enumerate(JOINT_NAMES):
                 JOINT_NAMES[i] = prefix + name
        
-        print inp
+        print(inp)
 
         coordinates()
 
         poseCirkel = [xRobot, yRobot, -0.100, 0, 0, 3.7]
-        pose1 = [0.27491, 0.20474, 0.12119, 3.14, 0, 0]
-        pose2 = [-0.34810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
-        pose3 = [0.78021, -0.12499, 0.29962, 3.14, 0, 0]
-        pose4 = [0, 0, 0, 3.14, 0, 0]
+        # pose1 = [0.27491, 0.20474, 0.12119, 3.14, 0, 0]
+        # pose2 = [-0.34810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
+        # pose3 = [0.78021, -0.12499, 0.29962, 3.14, 0, 0]
+        # pose4 = [0, 0, 0, 3.14, 0, 0]
         v = 0.3
         a = 0.2
         # rospy.spin()
@@ -168,7 +169,7 @@ def main():
 
         while (True):
             if (inp == True):
-                print "knop is in"
+                print("knop is in")
             while (inp == True):
                 rob.movel(poseCirkel, acc=a, vel=v, wait=False)
                 time.sleep(0.3)
@@ -199,16 +200,16 @@ def main():
                 # while True:
                 #     if not rob.is_program_running():
                 #         break
-                print "Test5"
+                print("Test5")
                 break
        
     except rospy.ROSInterruptException:
-    	print "ERROR: ROS interrupted!"
+        print("ERROR: ROS interrupted!")
         pass
+    except Exception as e:
+        print("CRITICAL ERROR: %s" %e)
     finally:
         rob.close()
-        print "CRITICAL ERROR"
-        raise
         sys.exit()
 
 if __name__ == '__main__': main()
