@@ -42,7 +42,7 @@ class ABBPConfig(Config):
     IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 6  # Background + balloon
+    NUM_CLASSES = 1 + 5  # Background + balloon
     # Number of training steps per epoch
     STEPS_PER_EPOCH = 100
 
@@ -51,6 +51,8 @@ class ABBPConfig(Config):
 
     # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 2
+
+    # MEAN_PIXEL = np.array([114.8, 114.8, 114.8])
 
 
 # Dataset class ABBPDataset(utils.Dataset):
@@ -233,6 +235,7 @@ def inference(model):
     pipeline = rs.pipeline()
     config = rs.config()
     config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 
     #
     # # Start streaming
@@ -243,17 +246,30 @@ def inference(model):
         # Wait for a coherent pair of frames: depth and color
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
-        if not color_frame:
+        depth_frame = frames.get_depth_frame()
+        if not color_frame or not depth_frame:
             continue
 
-        color_image = np.asanyarray(color_frame.get_data())
+        # color_image = np.asanyarray(color_frame.get_data())
 
-        inference_results = model.detect([color_image], verbose=1)
+        colorizer = rs.colorizer()
+        colorizer.set_option(rs.option.color_scheme, 2)
+        colorized_depth = np.asanyarray(colorizer.colorize(depth_frame).get_data())
+
+        depth_gray = cv2.cvtColor(colorized_depth, cv2.COLOR_BGR2GRAY)
+
+        x, mask = cv2.threshold(depth_gray, 15, 255, cv2.THRESH_BINARY_INV)
+
+        dst = cv2.inpaint(depth_gray, mask, 3, cv2.INPAINT_NS)
+
+        dst = cv2.cvtColor(dst, cv2.COLOR_GRAY2RGB)
+
+        inference_results = model.detect([dst], verbose=1)
 
         # Display results
         r = inference_results[0]
         print(r['class_ids'])
-        result_image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
+        result_image = visualize_mask(dst, r['rois'], r['masks'], r['class_ids'],
                                class_names, r['scores'], title="Predictions")
 
         # Show images
@@ -277,17 +293,15 @@ def image(model):
         "six"
     ]
 
-    image = skimage.io.imread("dst.png", as_gray=True)
+    image = cv2.imread("img.png")
 
-    image = image[:, :, np.newaxis]
+    # image = image[:, :, np.newaxis]
 
     results = model.detect([image], verbose=1)
 
     r = results[0]
 
-    rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-
-    image = visualize_mask(rgb, r['rois'], r['masks'], r['class_ids'], class_names, r['scores'], title="Predictions")
+    image = visualize_mask(image, r['rois'], r['masks'], r['class_ids'], class_names, r['scores'], title="Predictions")
 
     cv2.imshow('dst', image)
     cv2.waitKey(0)
