@@ -1,6 +1,8 @@
 #pragma once
 
-#include <camera_node/prop.h>
+#include <abbp_mask/DepthPose.h>
+#include <cv_bridge/cv_bridge.h>
+#include <mask_rcnn_ros/RectArray.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -16,6 +18,9 @@ public:
   void loop();
 
 private:
+  bool hideCircleDepth;
+  bool hideMaskDepth;
+
   cv_bridge::CvImagePtr colorImagePtr = nullptr;
   cv_bridge::CvImagePtr colorImageSnapshotPtr = nullptr;
   cv_bridge::CvImagePtr depthImagePtr = nullptr;
@@ -27,10 +32,10 @@ private:
   Subscriber depthImageListener;
   Subscriber maskDetectionListener;
 
-  Publisher colorImagePublisher;
-  Publisher propPublisher;
+  Publisher objectImagePublisher;
+  Publisher objectPosePublisher;
 
-  vector<camera_node::prop> props;
+  vector<abbp_mask::DepthPose> props;
 
   void onColorImage(const sensor_msgs::ImageConstPtr& msg);
   void onDepthImage(const sensor_msgs::ImageConstPtr& msg);

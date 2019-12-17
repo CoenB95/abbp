@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   mask_rcnn_ros
   cv_bridge
   image_transport
+  message_generation
   roscpp
   sensor_msgs
   std_msgs
@@ -51,11 +52,10 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  DepthPose.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -72,10 +72,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -107,8 +107,16 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  CATKIN_DEPENDS mask_rcnn_ros cv_bridge image_transport roscpp sensor_msgs std_msgs
+  INCLUDE_DIRS
+    include
+  CATKIN_DEPENDS
+    mask_rcnn_ros
+    cv_bridge
+    image_transport
+    message_runtime
+    roscpp
+    sensor_msgs
+    std_msgs
 )
 
 ###########
@@ -134,12 +142,12 @@ add_library(
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(mask_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(abbp_mask_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(mask_node src/mask_node.cpp)
+add_executable(abbp_mask_node src/abbp_mask_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -149,12 +157,12 @@ add_executable(mask_node src/mask_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(mask_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(abbp_mask_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(mask_node ${catkin_LIBRARIES})
-target_link_libraries(mask_node ${OpenCV_LIBS})
-target_link_libraries(mask_node avans-vision-lib)
+target_link_libraries(abbp_mask_node ${catkin_LIBRARIES})
+target_link_libraries(abbp_mask_node ${OpenCV_LIBS})
+target_link_libraries(abbp_mask_node avans-vision-lib)
 
 #############
 ## Install ##

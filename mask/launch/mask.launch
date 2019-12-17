@@ -1,11 +1,22 @@
 <launch>
-  <arg name="detection" default="false"/>
-  <arg name="view" default="false"/>
+  <arg name="camera-driver" default="true"/>
+  <arg name="masking" default="true"/>
+  <arg name="view-mask" default="true"/>
+  <arg name="view-circle" default="false"/>
 
+  <!-- Realsense Camera Driver -->
+  <group if="$(arg driver)">
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+      <arg name="align_depth" value="true" />
+      <arg name="enable_infra1" value="false"/>
+      <arg name="enable_infra2" value="false"/>
+    </include>
+  </group>
+  
   <!-- MaskRCNN Detection Node -->
   <group if="$(arg detection)">
     <include file="$(find mask_rcnn_ros)/launch/mask_rcnn_ros.launch">
-      <arg name="image" value="/mask_node/camera/color/image_raw"/>
+      <arg name="image" value="/abbp_mask_node/object/image_raw"/>
       <arg name="model" value="$(find abbp_mask)/models/ABBP MaskRCNN v1.h5"/>
       <arg name="class_labels" value="$(find abbp_mask)/models/class.txt"/>
       <arg name="detection_threshold" value="0.9"/>
@@ -14,9 +25,12 @@
     </include>
   </group>
 
-  <!-- Blobdetection -->
-  <group if="$(arg view)">
-      <node pkg="abbp_mask" type="mask_node" name="mask_node" output="screen"/>
+  <!-- Main ABBP Mask node (Mask Display) -->
+  <group if="$(eval arg('view-mask') or arg('view-circle'))">
+      <node pkg="abbp_mask" type="abbp_mask_node" name="mask_node" args="disable_circle_depth=false" output="screen">
+        <param name="disable_circle_depth" value="$(eval not arg('view-circle'))"/>
+        <param name="disable_mask_depth" value="$(eval not arg('view-mask'))"/>
+      </node>
   </group>
 
 </launch>
