@@ -135,10 +135,10 @@ def main():
         rob.set_tcp(tcp)
         time.sleep(0.2)
 
-        rospy.init_node('robotcalibratie')
+        rospy.init_node('abbp_robot_node')
         set_states()
         rospy.Subscriber("/ur_driver/io_states", IOStates, IOStates_callback)
-        rospy.Subscriber("/mask_node/prop", prop, propCallback)
+        rospy.Subscriber("/abbp_mask_node/prop", prop, propCallback)
 
         client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
         print("Waiting for server...")
