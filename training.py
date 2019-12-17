@@ -5,12 +5,20 @@ import skimage.io
 import json
 import cv2
 
-# ROOT_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/abbp'
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 print("ROOT: " + str(ROOT_DIR))
 sys.path.insert(0, ROOT_DIR)
 
 from mrcnn.config import Config
+from mrcnn import utils, model as modellib, visualize
+import annotation_generator
+
+# PYREALSENSE_DIR = ROOT_DIR + '/librealsense/build/wrappers/python'
+PYREALSENSE_DIR = '/Users/kjwdamme/School/jaar4/Project/Fase2/librealsense/build/wrappers/python'
+sys.path.append(PYREALSENSE_DIR)
+print(PYREALSENSE_DIR)
+
+import pyrealsense2 as rs
 from mrcnn import utils
 import annotation_generator
 
@@ -21,10 +29,10 @@ IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 
-COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "coco.h5") 
+COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "coco.h5")
 
 
-# CONFIGURATION 
+# CONFIGURATION
 class ABBPConfig(Config):
     """Configuration for training on the objects dataset.
     Derives from the base Config class and overrides some values.
@@ -36,7 +44,7 @@ class ABBPConfig(Config):
     IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 6  # Background + balloon
+    NUM_CLASSES = 1 + 5  # Background + balloon
     # Number of training steps per epoch
     STEPS_PER_EPOCH = 100
 
@@ -46,25 +54,9 @@ class ABBPConfig(Config):
     # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 2
 
-    IMAGE_CHANNEL_COUNT = 4
-
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 0.5])
-
-
 
 # Dataset class ABBPDataset(utils.Dataset):
 class ABBPDataset(utils.Dataset):
-
-    def load_image(self, image_id):
-        image = skimage.io.imread(self.image_info[image_id]['path'])
-        depth_image = skimage.io.imread(self.image_info[image_id]['depth_path'], as_gray=True)
-
-        image = skimage.color.rgba2rgb(image)
-
-        combined_image = np.dstack((image, depth_image))
-
-        return combined_image
-
     def load_object(self, dataset_dir):
         """Load a subset of the Objects dataset.
         dataset_dir: Root directory of the dataset.
@@ -76,7 +68,10 @@ class ABBPDataset(utils.Dataset):
         self.add_class("ABBP", 3, "three")
         self.add_class("ABBP", 4, "four")
         self.add_class("ABBP", 5, "five")
-        self.add_class("ABBP", 6, "six")
+
+        # Create annotations
+        if not os.path.isfile(os.path.join(dataset_dir, "annotations.json")):
+            annotation_generator.generate_annotations(dataset_dir)
 
         # Create annotations
         if not os.path.isfile(os.path.join(dataset_dir, "annotations.json")):
@@ -111,7 +106,7 @@ class ABBPDataset(utils.Dataset):
         # Convert polygons to a bitmap mask of shape
         # [height, width, instance_count]
         info = self.image_info[image_id]
-        
+
         mask = np.zeros([info["height"], info["width"], 1], dtype=np.uint8)
 
         xpoints = info["polygon"][0]
@@ -129,16 +124,108 @@ class ABBPDataset(utils.Dataset):
         return self.image_info[image_id]
 
 
+def validate(model):
+    dataset_val = ABBPDataset()
+    dataset_val.load_object("datasets/val_images")
+    dataset_val.prepare()
+
+    amount_correct = 0
+
+    for image in dataset_val.image_info:
+        print(image)
+
+        img_array = skimage.io.imread(image['path'], as_gray=True)
+
+        img_array = (img_array[:, :, np.newaxis])
+
+        # cv2.imshow("test", img_array)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+        # Use model to predict classes from validation images
+        results = model.detect([img_array], verbose=1)
+
+        r = results[0]
+
+        print("Detected class id: " + str(r))
+        print("Real class id:   : " + str(image['class_id']))
+
+        # Check wether there is only 1  class detected (because every
+        # validation image only contains 1 object) and if the detected class is
+        # the same as the class retrieved from the annotations
+        if len(r['class_ids']) == 1 and image['class_id'] == r['class_ids'][0]:
+            amount_correct += 1
+            print("Correct")
+
+
+    # Calculate correct percentage
+    accuracy = amount_correct / len(dataset_val.image_info) * 100
+
+    print(accuracy)
+
+
+def rgb(color):
+    rgb = []
+    for v in list(color):
+        rgb.append(v * 255)
+    return rgb
+
+
+def visualize_mask(image, boxes, masks, class_ids, class_names, scores=None,
+                   title=""):
+    # Number of instances
+    N = boxes.shape[0]
+    if not N:
+        print("No instances to dislay")
+    else:
+        assert boxes.shape[0] == masks.shape[-1] == class_ids.shape[0]
+
+    colors = visualize.random_colors(N)
+
+    masked_image = image.copy()
+    for i in range(N):
+        color = colors[i]
+
+        # Bouding box
+        if not np.any(boxes[i]):
+            # Skip this instance because it does not have a bounding box
+            continue
+        y1, x1, y2, x2 = boxes[i]
+
+        cv2.rectangle(masked_image, (x1, y1), (x2, y2), rgb(color), 2)
+
+        mask = masks[:, :, i]
+
+        alpha = 0.5
+
+        # Visualizing the mask
+        # 3 Because 3 color channels
+        for c in range(3):
+            masked_image[:, :, c] = np.where(mask == 1, image[:, :, c] * (1 -
+                                                                          alpha)
+                                             + alpha * color[c] * 255,
+                                             masked_image[:, :, c])
+
+        # Visualizing class and score
+        class_id = class_ids[i]
+        score = scores[i] if scores is not None else None
+        label = class_names[class_id]
+        caption = "{} {:.3f}".format(label, score) if score else label
+        cv2.putText(masked_image, caption, (x1, y1 - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
+
+    return masked_image
+
+
 def train(model):
     """Train the model."""
     # Training dataset.
     dataset_train = ABBPDataset()
-    dataset_train.load_object("images")
+    dataset_train.load_object("datasets/images")
     dataset_train.prepare()
 
-    # Validation dataset
     dataset_val = ABBPDataset()
-    dataset_val.load_object("val_images")
+    dataset_val.load_object("datasets/val_images")
     dataset_val.prepare()
 
     # Since we're using a very small dataset, and starting from
@@ -150,3 +237,176 @@ def train(model):
                 epochs=30,
                 layers='heads')
 
+def inference(model):
+    class_names = [
+        "BG",
+        "one",
+        "two",
+        "three",
+        "four",
+        "five"
+    ]
+
+    pipeline = rs.pipeline()
+    config = rs.config()
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+
+    #
+    # # Start streaming
+    pipeline.start(config)
+    #
+
+    while True:
+        # Wait for a coherent pair of frames: depth and color
+        frames = pipeline.wait_for_frames()
+        color_frame = frames.get_color_frame()
+        depth_frame = frames.get_depth_frame()
+        if not color_frame or not depth_frame:
+            continue
+
+        color_image = np.asanyarray(color_frame.get_data())
+
+        # colorizer = rs.colorizer()
+        # colorizer.set_option(rs.option.color_scheme, 2)
+        # colorized_depth = np.asanyarray(colorizer.colorize(depth_frame).get_data())
+
+        # align = rs.align(rs.stream.color)
+        # frameset = align.process(frames)
+
+        # aligned_depth_frame = frameset.get_depth_frame()
+        # colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
+
+        # depth_gray = cv2.cvtColor(colorized_depth, cv2.COLOR_BGR2GRAY)
+        #
+        # x, mask = cv2.threshold(depth_gray, 15, 255, cv2.THRESH_BINARY_INV)
+        #
+        # dst = cv2.inpaint(depth_gray, mask, 3, cv2.INPAINT_NS)
+        #
+        # dst = cv2.cvtColor(dst, cv2.COLOR_GRAY2RGB)
+
+        inference_results = model.detect([color_image], verbose=1)
+
+        # Display results
+        r = inference_results[0]
+        print(r['class_ids'])
+        result_image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
+                               class_names, r['scores'], title="Predictions")
+
+        # Show images
+        cv2.imshow('RealSense', result_image)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    pipeline.stop()
+    cv2.destroyAllWindows()
+
+
+def image(model):
+    class_names = [
+        "BG",
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six"
+    ]
+
+    image = cv2.imread("img.png")
+
+    results = model.detect([image], verbose=1)
+
+    r = results[0]
+
+    image = visualize_mask(image, r['rois'], r['masks'], r['class_ids'], class_names, r['scores'], title="Predictions")
+
+    cv2.imshow('dst', image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+def validate(model):
+    dataset_val = ABBPDataset()
+    dataset_val.load_object("datasets/val_images")
+    dataset_val.prepare()
+
+    amount_correct = 0
+
+    for image in dataset_val.image_info:
+        print(image)
+
+        img_array = cv2.imread(image['path'])
+
+        # Use model to predict classes from validation images
+        results = model.detect([img_array], verbose=1)
+
+        r = results[0]
+
+        print("Detected class id: " + str(r))
+        print("Real class id:   : " + str(image['class_id']))
+
+        # Check wether there is only 1  class detected (because every
+        # validation image only contains 1 object) and if the detected class is
+        # the same as the class retrieved from the annotations
+        if len(r['class_ids']) == 1 and image['class_id'] == r['class_ids'][0]:
+            amount_correct += 1
+            print("Correct")
+
+    # Calculate correct percentage
+    accuracy = amount_correct / len(dataset_val.image_info) * 100
+
+    print(accuracy)
+
+
+import argparse
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Train Mask R-CNN to detect custom objects')
+
+parser.add_argument("command", metavar="<command>", help="'train' or 'inference'")
+
+parser.add_argument('--dataset', required=False, metavar="/path/to/dataset/",
+                    help='Directory of the Balloon dataset')
+
+parser.add_argument('--logs', required=False, default=DEFAULT_LOGS_DIR,
+                    metavar="path/to/logs/", help='Logs and checkpoints directory (default=logs/)')
+
+parser.add_argument('--weights', required=True, metavar="/path/to/weights.h5",
+                    help="Path to weights .h5 file or 'coco'")
+
+args = parser.parse_args()
+
+if args.command == "train":
+    config = ABBPConfig()
+else:
+    class InferenceConfig(ABBPConfig):
+        GPU_COUNT = 1
+        IMAGES_PER_GPU = 1
+
+
+    config = InferenceConfig()
+config.display()
+
+if args.command == "train":
+    model = modellib.MaskRCNN(mode="training", config=config,
+                              model_dir=args.logs)
+
+    model.load_weights(args.weights, by_name=True,
+                       exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"])
+else:
+    model = modellib.MaskRCNN(mode="inference", config=config,
+                              model_dir=args.logs)
+
+    model.load_weights(args.weights, by_name=True)
+
+
+if args.command == "train":
+    train(model)
+elif args.command == "validate":
+    validate(model)
+elif args.command == "inference":
+    inference(model)
+else:
+    print("'{}' is not recognized. Use 'train', 'validate' or 'inference'".format(args.command))
