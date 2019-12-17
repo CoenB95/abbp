@@ -115,7 +115,7 @@ void MaskNode::onColorImage(const sensor_msgs::ImageConstPtr& msg) {
     drawKeypoints(resultImage, keypoints, resultImage, Colors::RED * 0.5, DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
     drawMarker(resultImage, keypoints[0].pt, Colors::RED, MarkerTypes::MARKER_CROSS);
   } else {
-    ImageUtils::noImage(resultImage, resultImage.size());
+    ImageUtils::simpleOverlay(resultImage, "NOT FOUND");
   }
 
   WindowUtils::showColor(resultImage, "Circle Result", hideCircleDepth);
