@@ -11,7 +11,7 @@ import urx
 import numpy as np
 
 from io import StringIO
-from camera_node.msg import prop
+from abbp_mask.msg import DepthPose
 from control_msgs.msg import FollowJointTrajectoryAction
 from math import pi
 from math import atan

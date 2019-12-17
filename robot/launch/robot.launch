@@ -1,6 +1,7 @@
 <launch>
-  <arg name="driver" default="true"/>
-  <arg name="main" default="true"/>
+  <arg name="driver" default="false"/>
+  <arg name="limited" default="false"/>
+  <arg name="main" default="false"/>
 
   <!-- Real UR5 Robot Driver -->
   <group if="$(arg driver)">
@@ -12,7 +13,7 @@
 
   <!-- Main ABBP Robot node -->
   <group if="$(arg main)">
-    <node pkg="abbp_robot" type="abbp_robot_node" name="abbp_robot_node.py" output="screen">
+    <node pkg="abbp_robot" type="abbp_robot_node" name="abbp_robot_node.py" output="screen"/>
   </group>
 
 </launch>
