@@ -130,8 +130,8 @@ def main():
         set_states()
         rospy.init_node('robotcalibratie')
         rospy.Subscriber("/ur_driver/io_states", IOStates, IOStates_callback)
-        # rospy.Subscriber("/blob_properties", prop, propCallback)
-        # rospy.Subscriber("/camera/depth/color/points", PointCloud2, pointcloudCallback)
+        rospy.Subscriber("/blob_properties", prop, propCallback)
+        rospy.Subscriber("/camera/depth/color/points", PointCloud2, pointcloudCallback)
         client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
         print("Waiting for server...")
         client.wait_for_server()
@@ -146,8 +146,8 @@ def main():
         print(inp)
 
         pose1 = [0.27491, 0.20474, 0.12119, 3.14, 0, 0]
-        pose2 = [-0.34810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
-        pose3 = [0.78021, -0.12499, 0.29962, 3.14, 0, 0]
+        pose2 = [-0.24810878976703047, -0.01692581365556508, 0.18651047378839763, 3.14, 0, 0]
+        pose3 = [0.48021, -0.12499, 0.19962, 3.14, 0, 0]
         v = 0.3
         a = 0.2
         
