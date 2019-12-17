@@ -42,7 +42,7 @@ class ABBPConfig(Config):
     IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 5  # Background + balloon
+    NUM_CLASSES = 1 + 6  # Background + balloon
     # Number of training steps per epoch
     STEPS_PER_EPOCH = 100
 
@@ -227,14 +227,13 @@ def inference(model):
         "two",
         "three",
         "four",
-        "five",
-        "fix"
+        "five"
     ]
 
     pipeline = rs.pipeline()
     config = rs.config()
     config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+
     #
     # # Start streaming
     pipeline.start(config)
@@ -244,31 +243,21 @@ def inference(model):
         # Wait for a coherent pair of frames: depth and color
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
-        depth_frame = frames.get_depth_frame()
-        if not color_frame or not depth_frame:
+        if not color_frame:
             continue
 
         color_image = np.asanyarray(color_frame.get_data())
-
-        colorizer = rs.colorizer()
-        colorizer.set_option(rs.option.color_scheme, 2)
-        colorized_depth = np.asanyarray(colorizer.colorize(depth_frame).get_data())
-        colorized_depth = skimage.color.rgb2gray(colorized_depth)
-
-        colorized_depth = colorized_depth[:, :, np.newaxis]
 
         inference_results = model.detect([color_image], verbose=1)
 
         # Display results
         r = inference_results[0]
         print(r['class_ids'])
-        image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
+        result_image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
                                class_names, r['scores'], title="Predictions")
 
-        # images = np.hstack((converted_depth, colorized_depth))
-
         # Show images
-        cv2.imshow('RealSense', image)
+        cv2.imshow('RealSense', result_image)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -376,12 +365,15 @@ config.display()
 if args.command == "train":
     model = modellib.MaskRCNN(mode="training", config=config,
                               model_dir=args.logs)
+
+    model.load_weights(args.weights, by_name=True,
+                       exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"])
 else:
     model = modellib.MaskRCNN(mode="inference", config=config,
                               model_dir=args.logs)
 
-model.load_weights(args.weights, by_name=True,
-                   exclude=["conv1", "mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"])
+    model.load_weights(args.weights, by_name=True)
+
 
 if args.command == "train":
     train(model)
