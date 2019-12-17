@@ -48,7 +48,10 @@ def main():
 
     try:
         global newdata
+        global az, bz, axa, axb, bxa, bxb, aya, ayb, bya, byb
         newdata = False
+        weightsPath = "weights60.csv"
+        az, bz, axa, axb, bxa, bxb, aya, ayb, bya, byb = loadWeigths(weightsPath)
 
         # Tool center point inladen, aanwijspunt is 106 mm lang
         tcp = [0, 0, 0.110, 0, 0, 0]
@@ -138,33 +141,15 @@ def objectCallback(msg): # Uitlezen data van mask node
     # print (y)
 
 def pixelToRobotPos(pixelx, pixely, pixelz): # Vertalen pixelwaarden naar robotwaarden
-    # Werkt alleen op camerahoogte 60
-    
-    #pixelz function variabels
-    az = -0.00098842
-    bz = 0.58280337
-    
+
+    #pixelz function
     robotz = az * pixelz + bz 
-    
-    #pixelx function variables
-    axa = 1.574876543209876e-06
-    axb = 2.1168888888889155e-05
-    
-    bxa = -0.0005164119135802469
-    bxb = -0.037168092222222227
     
     #pixelx functions
     ax = axa * pixelz + axb
     bx = bxa * pixelz + bxb
     
     roboty = ax * pixelx + bx
-    
-    #pixely function variables
-    aya = 1.6231481481481479e-06
-    ayb = -1.1866666666665582e-06
-    
-    bya = -0.0004032479629629631
-    byb = 0.6218069633333334
     
     #pixely functions
     ay = aya * pixelz + ayb
@@ -182,5 +167,9 @@ def robotMove(pose):
     while True:
         if rob.is_program_running() == False: # Wachten tot robot klaar is met beweging
             break
+
+def loadWeigths(weightsPath):
+    weights = np.genfromtxt(weightsPath, delimiter=',')
+    return weights[0], weights[1], weights[2], weights[3], weights[4], weights[5], weights[6], weights[7], weights[8], weights[9]
 
 if __name__ == '__main__': main()
