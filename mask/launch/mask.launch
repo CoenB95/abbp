@@ -5,7 +5,7 @@
   <arg name="view-circle" default="false"/>
 
   <!-- Realsense Camera Driver -->
-  <group if="$(arg driver)">
+  <group if="$(arg camera-driver)">
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
       <arg name="align_depth" value="true" />
       <arg name="enable_infra1" value="false"/>
@@ -14,7 +14,7 @@
   </group>
   
   <!-- MaskRCNN Detection Node -->
-  <group if="$(arg detection)">
+  <group if="$(arg masking)">
     <include file="$(find mask_rcnn_ros)/launch/mask_rcnn_ros.launch">
       <arg name="image" value="/abbp_mask_node/object/image_raw"/>
       <arg name="model" value="$(find abbp_mask)/models/ABBP MaskRCNN v1.h5"/>
