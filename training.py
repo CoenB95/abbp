@@ -51,9 +51,7 @@ class ABBPConfig(Config):
     # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 2
 
-    IMAGE_CHANNEL_COUNT = 1
-
-    MEAN_PIXEL = 114.8
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9])
 
 
 # Dataset class ABBPDataset(utils.Dataset):
@@ -267,7 +265,7 @@ def inference(model):
 
         colorized_depth = colorized_depth[:, :, np.newaxis]
 
-        inference_results = model.detect([colorized_depth], verbose=1)
+        inference_results = model.detect([color_image], verbose=1)
 
         # Display results
         r = inference_results[0]
