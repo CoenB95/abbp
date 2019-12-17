@@ -257,7 +257,7 @@ def inference(model):
 
         colorized_depth = colorized_depth[:, :, np.newaxis]
 
-        inference_results = model.detect([colorized_depth], verbose=1)
+        inference_results = model.detect([color_image], verbose=1)
 
         # Display results
         r = inference_results[0]
