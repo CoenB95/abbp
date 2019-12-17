@@ -119,33 +119,44 @@ class ABBPDataset(utils.Dataset):
         return self.image_info[image_id]
 
 
-def test():
-    dataset = ABBPDataset()
-    dataset.load_object("datasets/images")
+def validate(model):
+    dataset_val = ABBPDataset()
+    dataset_val.load_object("datasets/val_images")
+    dataset_val.prepare()
 
-    img_info = dataset.image_info[20]
-    print(img_info)
-    image = cv2.imread(img_info['path'])
+    amount_correct = 0
 
-    # xpoints = img_info["polygon"][0]
-    # ypoints = img_info["polygon"][1]
-    #
-    # points = np.array(img_info["polygon"]).transpose()
-    #
-    # mask = np.zeros([img_info["height"], img_info["width"], 1], dtype=np.uint8)
-    #
-    # rr, cc = skimage.draw.polygon(xpoints, ypoints)
-    #
-    # print(image.shape)
-    #
-    # mask[cc, rr, 0] = image[cc, rr, 0]
+    for image in dataset_val.image_info:
+        print(image)
 
-    # mask = dataset.load_mask(0)
+        img_array = skimage.io.imread(image['path'], as_gray=True)
 
-    cv2.imshow("image", image)
+        img_array = (img_array[:, :, np.newaxis])
 
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        # cv2.imshow("test", img_array)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+        # Use model to predict classes from validation images
+        results = model.detect([img_array], verbose=1)
+
+        r = results[0]
+
+        print("Detected class id: " + str(r))
+        print("Real class id:   : " + str(image['class_id']))
+
+        # Check wether there is only 1  class detected (because every
+        # validation image only contains 1 object) and if the detected class is
+        # the same as the class retrieved from the annotations
+        if len(r['class_ids']) == 1 and image['class_id'] == r['class_ids'][0]:
+            amount_correct += 1
+            print("Correct")
+
+
+    # Calculate correct percentage
+    accuracy = amount_correct / len(dataset_val.image_info) * 100
+
+    print(accuracy)
 
 
 def rgb(color):
@@ -250,26 +261,32 @@ def inference(model):
         if not color_frame or not depth_frame:
             continue
 
-        # color_image = np.asanyarray(color_frame.get_data())
+        color_image = np.asanyarray(color_frame.get_data())
 
         colorizer = rs.colorizer()
         colorizer.set_option(rs.option.color_scheme, 2)
-        colorized_depth = np.asanyarray(colorizer.colorize(depth_frame).get_data())
+        # colorized_depth = np.asanyarray(colorizer.colorize(depth_frame).get_data())
 
-        depth_gray = cv2.cvtColor(colorized_depth, cv2.COLOR_BGR2GRAY)
+        align = rs.align(rs.stream.color)
+        frameset = align.process(frames)
 
-        x, mask = cv2.threshold(depth_gray, 15, 255, cv2.THRESH_BINARY_INV)
+        aligned_depth_frame = frameset.get_depth_frame()
+        colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
 
-        dst = cv2.inpaint(depth_gray, mask, 3, cv2.INPAINT_NS)
+        # depth_gray = cv2.cvtColor(colorized_depth, cv2.COLOR_BGR2GRAY)
+        #
+        # x, mask = cv2.threshold(depth_gray, 15, 255, cv2.THRESH_BINARY_INV)
+        #
+        # dst = cv2.inpaint(depth_gray, mask, 3, cv2.INPAINT_NS)
+        #
+        # dst = cv2.cvtColor(dst, cv2.COLOR_GRAY2RGB)
 
-        dst = cv2.cvtColor(dst, cv2.COLOR_GRAY2RGB)
-
-        inference_results = model.detect([dst], verbose=1)
+        inference_results = model.detect([colorized_depth], verbose=1)
 
         # Display results
         r = inference_results[0]
         print(r['class_ids'])
-        result_image = visualize_mask(dst, r['rois'], r['masks'], r['class_ids'],
+        result_image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
                                class_names, r['scores'], title="Predictions")
 
         # Show images
@@ -318,9 +335,7 @@ def validate(model):
     for image in dataset_val.image_info:
         print(image)
 
-        img_array = skimage.io.imread(image['path'], as_gray=True)
-
-        img_array = (img_array[:, :, np.newaxis])
+        img_array = cv2.imread(image['path'])
 
         # cv2.imshow("test", img_array)
         # cv2.waitKey(0)
@@ -395,9 +410,5 @@ elif args.command == "validate":
     validate(model)
 elif args.command == "inference":
     inference(model)
-elif args.command == "image":
-    image(model)
-elif args.command == "test":
-    test()
 else:
     print("'{}' is not recognized. Use 'train', 'validate' or 'inference'".format(args.command))
