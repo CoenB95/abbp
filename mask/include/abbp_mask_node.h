@@ -1,6 +1,7 @@
 #pragma once
 
 #include <abbp_mask/DepthPose.h>
+#include <abbp_mask/DepthPoseService.h>
 #include <cv_bridge/cv_bridge.h>
 #include <mask_rcnn_ros/RectArray.h>
 #include <ros/ros.h>
@@ -25,6 +26,7 @@ public:
 private:
   bool hideCircleDepth;
   bool hideMaskDepth;
+  bool maskingDone = false;
 
   cv_bridge::CvImagePtr colorImagePtr = nullptr;
   cv_bridge::CvImagePtr colorImageSnapshotPtr = nullptr;
@@ -41,6 +43,8 @@ private:
   Publisher objectImagePublisher;
   Publisher objectPosePublisher;
 
+  ServiceServer maskServiceListener;
+
   vector<abbp_mask::DepthPose> props;
 
   vector<Window*> windows;
@@ -55,4 +59,6 @@ private:
   void onColorImage(const sensor_msgs::ImageConstPtr& msg);
   void onDepthImage(const sensor_msgs::ImageConstPtr& msg);
   void onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg);
+  bool onMaskServiceCall(abbp_mask::DepthPoseService::Request& request, abbp_mask::DepthPoseService::Response& response);
+  void mask();
 };

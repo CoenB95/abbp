@@ -37,6 +37,7 @@ MaskNode::MaskNode() {
     maskResultWindow->addDrawable(maskImageView);
     windows.push_back(maskResultWindow);
     objectPosePublisher = nodeHandle.advertise<abbp_mask::DepthPose>("/abbp_mask_node/object/pose", 1);
+    maskServiceListener = nodeHandle.advertiseService("/abbp_mask_node/trigger_mask", &MaskNode::onMaskServiceCall, this);
   }
 }
 
@@ -61,16 +62,7 @@ void MaskNode::loop() {
     int k = cv::waitKey(10);
 
     if (!hideMaskDepth && k == 'a') {
-      ROS_INFO("Making snapshot of camera..");
-      colorImageSnapshotPtr = colorImagePtr;
-      depthImageSnapshotPtr = depthImagePtr;
-      objectImagePublisher.publish(colorImageSnapshotPtr->toImageMsg());
-      ROS_INFO("  Published color image");
-      maskResultWindow->addDrawable(progressCircle);
-      Mat o;
-      colorImagePtr->image.copyTo(o);
-      ImageUtils::simpleOverlay(o, "SEARCHING..");
-      maskImageView->set(o);
+      mask();
     } else if (k > 48 && k < 58) {
       int i = k - 48;
       ROS_INFO_STREAM("Choose object #" << i);
@@ -206,5 +198,43 @@ void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
 
   maskResultWindow->removeDrawable(progressCircle);
   maskImageView->set(masked_image);
-  //WindowUtils::showColor(masked_image, "Mask Result", hideMaskDepth);
+  maskingDone = true;
+}
+
+bool MaskNode::onMaskServiceCall(abbp_mask::DepthPoseService::Request& request, abbp_mask::DepthPoseService::Response& response) {
+  mask();
+  ros::Rate rate(1);
+  while (!maskingDone) {
+    rate.sleep();
+    ROS_INFO("Waiting for mask..");
+  }
+  
+  if (props.empty()) {
+    response.success = false;
+    return true;
+  }
+
+  abbp_mask::DepthPose pose = props[0];
+  for (abbp_mask::DepthPose p : props) {
+    if (p.depth < pose.depth) {
+      pose = p;
+    }
+  }
+  response.success = true;
+  response.pose = pose;
+  return true;
+}
+
+void MaskNode::mask() {
+  maskingDone = false;
+  ROS_INFO("Making snapshot of camera..");
+  colorImageSnapshotPtr = colorImagePtr;
+  depthImageSnapshotPtr = depthImagePtr;
+  objectImagePublisher.publish(colorImageSnapshotPtr->toImageMsg());
+  ROS_INFO("  Published color image");
+  maskResultWindow->addDrawable(progressCircle);
+  Mat o;
+  colorImagePtr->image.copyTo(o);
+  ImageUtils::simpleOverlay(o, "SEARCHING..");
+  maskImageView->set(o);
 }
