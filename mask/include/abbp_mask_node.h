@@ -8,6 +8,11 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <vector>
 
+#include "colors.h"
+#include "images.h"
+#include "utils.h"
+
+using namespace avl;
 using namespace ros;
 using namespace std;
 
@@ -37,6 +42,15 @@ private:
   Publisher objectPosePublisher;
 
   vector<abbp_mask::DepthPose> props;
+
+  vector<Window*> windows;
+  Window* liveResultWindow;
+  Window* circleResultWindow;
+  Window* maskResultWindow;
+  ImageView* liveImageView = new ImageView();
+  ImageView* circleImageView = new ImageView();
+  ImageView* maskImageView = new ImageView();
+  IndeterminateProgressBar* progressCircle = new IndeterminateProgressBar(Point(75, 75), 60, 20);
 
   void onColorImage(const sensor_msgs::ImageConstPtr& msg);
   void onDepthImage(const sensor_msgs::ImageConstPtr& msg);

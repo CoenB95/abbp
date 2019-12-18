@@ -127,17 +127,13 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
+  src/avans-vision-lib
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-add_library(
-  avans-vision-lib
-    src/avans-vision-lib/colors.cpp
-    src/avans-vision-lib/images.cpp
-    src/avans-vision-lib/utils.cpp
-    src/avans-vision-lib/avansvisionlib.cpp)
+# add_library(avans-vision-lib src/avans-vision-lib/avansvisionlib.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -147,7 +143,12 @@ add_library(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(abbp_mask_node src/abbp_mask_node.cpp)
+add_executable(
+  abbp_mask_node
+    src/abbp_mask_node.cpp
+    src/avans-vision-lib/utils.cpp
+    src/avans-vision-lib/colors.cpp
+    src/avans-vision-lib/images.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -162,7 +163,6 @@ add_dependencies(abbp_mask_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXP
 ## Specify libraries to link a library or executable target against
 target_link_libraries(abbp_mask_node ${catkin_LIBRARIES})
 target_link_libraries(abbp_mask_node ${OpenCV_LIBS})
-target_link_libraries(abbp_mask_node avans-vision-lib)
 
 #############
 ## Install ##
