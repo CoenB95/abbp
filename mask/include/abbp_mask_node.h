@@ -32,6 +32,7 @@ private:
   Subscriber depthImageListener;
   Subscriber maskDetectionListener;
 
+  Publisher circlePosePublisher;
   Publisher objectImagePublisher;
   Publisher objectPosePublisher;
 

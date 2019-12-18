@@ -22,19 +22,23 @@ MaskNode::MaskNode() {
   depthImageListener = nodeHandle.subscribe("/camera/aligned_depth_to_color/image_raw", 10, &MaskNode::onDepthImage, this);
   maskDetectionListener = nodeHandle.subscribe("/object_detector/rects", 10, &MaskNode::onMaskDetection, this);
 
-  objectImagePublisher = nodeHandle.advertise<sensor_msgs::Image>("/abbp_mask_node/object/image_raw", 1);
-  objectPosePublisher = nodeHandle.advertise<abbp_mask::DepthPose>("/abbp_mask_node/object/pose", 1);
-
-  ROS_INFO_STREAM("Found param /mask_node/disable_circle_depth: " << nodeHandle.hasParam("/mask_node/disable_circle_depth") ? "true" : "false");
-  ROS_INFO_STREAM("Found param /disable_circle_depth: " << nodeHandle.hasParam("/disable_circle_depth") ? "true" : "false");
-  ROS_INFO_STREAM("Found param disable_circle_depth: " << nodeHandle.hasParam("disable_circle_depth") ? "true" : "false");
-
   nodeHandle.param("/mask_node/disable_circle_depth", hideCircleDepth, true);
   nodeHandle.param("/mask_node/disable_mask_depth", hideMaskDepth, false);
 
-  WindowUtils::window("Live");
-  if (!hideCircleDepth) WindowUtils::window("Circle Result");
-  if (!hideMaskDepth) WindowUtils::window("Mask Result");
+  { // Always live image
+    WindowUtils::window("Live");
+    objectImagePublisher = nodeHandle.advertise<sensor_msgs::Image>("/abbp_mask_node/object/image_raw", 1);
+  }
+
+  if (!hideCircleDepth) {
+    WindowUtils::window("Circle Result");
+    circlePosePublisher = nodeHandle.advertise<abbp_mask::DepthPose>("/abbp_mask_node/circle/pose", 1);
+  }
+  
+  if (!hideMaskDepth) {
+    WindowUtils::window("Mask Result");
+    objectPosePublisher = nodeHandle.advertise<abbp_mask::DepthPose>("/abbp_mask_node/object/pose", 1);
+  }
 }
 
 void MaskNode::loop() {
@@ -112,6 +116,14 @@ void MaskNode::onColorImage(const sensor_msgs::ImageConstPtr& msg) {
   Mat resultImage;
   colorImagePtr->image.copyTo(resultImage);
   if (keypoints.size() > 0) {
+    if (depthImagePtr != nullptr) {
+      abbp_mask::DepthPose pose;
+      pose.x = keypoints[0].pt.x;
+      pose.y = keypoints[0].pt.y;
+      pose.depth = ImageUtils::getPixel<float>(depthImagePtr->image, keypoints[0].pt);
+      circlePosePublisher.publish(pose);
+    }
+
     drawKeypoints(resultImage, keypoints, resultImage, Colors::RED * 0.5, DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
     drawMarker(resultImage, keypoints[0].pt, Colors::RED, MarkerTypes::MARKER_CROSS);
   } else {
