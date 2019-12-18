@@ -11,7 +11,7 @@ import urx
 import numpy as np
 import csv
 
-from camera_node.msg import prop
+from abbp_mask.msg import DepthPose
 from control_msgs.msg import FollowJointTrajectoryAction
 from math import pi
 from math import atan
@@ -29,9 +29,10 @@ roslib.load_manifest('ur_driver')
 rob = urx.Robot("172.22.22.2")
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
+
 knop = False
 client = None
-
+nieuwelaag = False
 # origin = [0.36442, 0.20452, 0.10149, 2.4984, -1.9328, 0]
 # xpositief = [0.36447, -0.20380, 0.10122, 1.2306, -2.8976, 0]
 # ypositief = [0.85440, 0.20367, 0.09968, 2.3768, -2.1229, 0]
@@ -84,16 +85,21 @@ def propCallback(msg):
     global diepte
     x = msg.x
     y = msg.y
-    diepte = msg.d
+    diepte = msg.depth
     # print x
     # print y
 
 def saveValues(tabel):
+    global nieuwelaag
+    global laag
     robotpos = rob.getl()
     robotwaardes = robotpos[:3]
     pixelwaardes = [x, y, diepte]
     np.set_printoptions(suppress=True)
+    if nieuwelaag == True:
+        laag += 1
     robotpixel = np.append(pixelwaardes, robotwaardes)
+    robotpixel = np.hstack((robotpixel, laag))
     tabel = np.vstack([tabel, robotpixel])
     return tabel
 
@@ -107,14 +113,18 @@ def main():
         global xopschuif
         global yopschuif
         global zopschuif
+        global nieuwelaag
+        global laag
 
+        nieuwelaag = False
+        laag = 1
         xopschuif = 0.02 # 5 mm opschuiven
         yopschuif = 0.02 # 5 mm opschuiven
         zopschuif = 0.02 # 5 mm opschuiven
         rospy.init_node('robotcalibratie')
         set_states()
         rospy.Subscriber("/ur_driver/io_states", IOStates, IOStates_callback)
-        rospy.Subscriber("/blob_properties", prop, propCallback)
+        rospy.Subscriber("/abbp_mask_node/circle/pose", DepthPose, propCallback)
 
         client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
         print("Waiting for server...")
@@ -131,10 +141,31 @@ def main():
         a = 0.2
         # rospy.spin()
         
-        tabel = np.zeros(shape=(1,6))
+        tabel = np.zeros(shape=(1,7))
         input("Press the start button to start and then press enter")
         currentpose = rob.getl()
+        if x > 0 and y > 0 and diepte >0:
+            tabel = saveValues(tabel)
+        middelpuntX = currentpose[0]
+        middelpuntY = currentpose[1]
+        startpose = [0.471, 0.160, 0.035, currentpose[3], currentpose[4], currentpose[5]]
+        nieuwelaag = True
+
         while True: # Opschuiven in de x richting van het robotassenstelsel
+            if nieuwelaag == True:
+                startpose[2] = currentpose[2]
+                rob.movel(startpose, acc=a, vel=v, wait=False)
+                time.sleep(0.2)
+                while True:
+                    if rob.is_program_running() == False:
+                        break
+                currentpose[0] = startpose[0]
+                currentpose[1] = startpose[1]
+                nieuwelaag =  False
+                if x > 0 and y > 0 and diepte >0:
+                    tabel = saveValues(tabel)
+
+
             currentpose[0] += xopschuif
             rob.movel(currentpose, acc=a, vel=v, wait=False)
             time.sleep(0.2)
@@ -145,7 +176,7 @@ def main():
             if x > 0 and y > 0 and diepte >0:
                 tabel = saveValues(tabel)
 
-            if currentpose[0] < 0.422 or currentpose[0] > 0.760: # Wanneer een hele rij is afgelegd, in de Y een beetje opschuiven en achteruit bewgen in X
+            if currentpose[0] < 0.470 or currentpose[0] > 0.740: # Wanneer een hele rij is afgelegd, in de Y een beetje opschuiven en achteruit bewgen in X
                 currentpose[1] -= yopschuif
                 rob.movel(currentpose, acc=a, vel=v, wait=False)
                 time.sleep(0.2)
@@ -156,9 +187,12 @@ def main():
                 if x > 0 and y > 0 and diepte > 0:
                     tabel = saveValues(tabel)
 
-                if currentpose[1] < -0.170 or currentpose[1] > 0.161:
+                if currentpose[1] < -0.160 or currentpose[1] > 0.161:
+                    nieuwelaag = True
+                    currentpose[0] = middelpuntX
+                    currentpose[1] = middelpuntY
                     currentpose[2] += zopschuif
-                    yopschuif = yopschuif * -1 # yopschuif omklappen zodat hij weer de andere kant op gaat
+                    # yopschuif = yopschuif * -1 # yopschuif omklappen zodat hij weer de andere kant op gaat
                     rob.movel(currentpose, acc=a, vel=v, wait=False)
                     time.sleep(0.2)
                     while True:
@@ -167,10 +201,13 @@ def main():
                     print(tabel)
                     if x > 0 and y > 0 and diepte > 0:
                         tabel = saveValues(tabel)
-                    
-                xopschuif = xopschuif * -1 # xopschuif omklappen zodat hij weer de andere kant op gaat
+                
+                if nieuwelaag == True:
+                    xopschuif = 0.02
+                else:
+                    xopschuif = xopschuif * -1 # xopschuif omklappen zodat hij weer de andere kant op gaat
             if (knop == False) or currentpose[2] > 0.2:
-                np.savetxt('tabelklein.csv', tabel, '%19.6f', delimiter= ',')
+                np.savetxt('tabel50.csv', tabel, '%19.6f', delimiter= ',')
                 break
                 
             
