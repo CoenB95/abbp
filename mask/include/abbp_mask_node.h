@@ -17,6 +17,23 @@ using namespace avl;
 using namespace ros;
 using namespace std;
 
+class MaskResult {
+public:
+  const int id;
+  const String className;
+  const abbp_mask::DepthPose pose;
+
+  MaskResult(int id, String className, abbp_mask::DepthPose pose)
+   : id(id), className(className), pose(pose) { }
+  static MaskResult of (int id, String className, Point position, double depth) {
+    abbp_mask::DepthPose pose;
+    pose.x = position.x;
+    pose.y = position.y;
+    pose.depth = depth;
+    return MaskResult(id, className, pose);
+  }
+};
+
 class MaskNode {
 public:
   MaskNode();
@@ -45,7 +62,7 @@ private:
 
   ServiceServer maskServiceListener;
 
-  vector<abbp_mask::DepthPose> props;
+  vector<MaskResult> maskingResults;
 
   vector<Window*> windows;
   Window* liveResultWindow;
@@ -54,7 +71,7 @@ private:
   ImageView* liveImageView = new ImageView();
   ImageView* circleImageView = new ImageView();
   ImageView* maskImageView = new ImageView();
-  IndeterminateProgressBar* progressCircle = new IndeterminateProgressBar(Point(75, 75), 60, 20);
+  IndeterminateOverlay* progressCircle = nullptr;
 
   void onColorImage(const sensor_msgs::ImageConstPtr& msg);
   void onDepthImage(const sensor_msgs::ImageConstPtr& msg);

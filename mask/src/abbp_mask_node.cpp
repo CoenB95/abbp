@@ -66,10 +66,10 @@ void MaskNode::loop() {
     } else if (k > 48 && k < 58) {
       int i = k - 48;
       ROS_INFO_STREAM("Choose object #" << i);
-      if (i < 1 || i > props.size()) {
-        ROS_INFO_STREAM("  Not existing (max " << props.size() << ")");
+      if (i < 1 || i > maskingResults.size()) {
+        ROS_INFO_STREAM("  Not existing (max " << maskingResults.size() << ")");
       } else {
-        objectPosePublisher.publish(props[i - 1]);
+        objectPosePublisher.publish(maskingResults[i - 1].pose);
         ROS_INFO("  Published prop");
       }
     }
@@ -84,6 +84,12 @@ void MaskNode::onColorImage(const sensor_msgs::ImageConstPtr& msg) {
   } catch (cv_bridge::Exception& e) {
     ROS_ERROR("Error reading color image: %s", e.what());
     colorImagePtr = nullptr;
+    return;
+  }
+
+  liveImageView->set(colorImagePtr->image);
+
+  if (hideCircleDepth) {
     return;
   }
 
@@ -129,7 +135,6 @@ void MaskNode::onColorImage(const sensor_msgs::ImageConstPtr& msg) {
     ImageUtils::simpleOverlay(resultImage, "NOT FOUND");
   }
 
-  liveImageView->set(colorImagePtr->image);
   circleImageView->set(resultImage);
   //WindowUtils::showColor(resultImage, "Circle Result", hideCircleDepth);
 }
@@ -146,13 +151,14 @@ void MaskNode::onDepthImage(const sensor_msgs::ImageConstPtr& msg) {
 
 void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
   ROS_INFO("Mask produced!");
-  props.clear();
+  maskingResults.clear();
 
   cv::Mat masked_image(colorImageSnapshotPtr->image);
 
   if (msg->indices.size() < 1) {
     ROS_INFO("  Nothing");
-    ImageUtils::simpleOverlay(masked_image, "NO RESULT");
+    progressCircle->overlay->label->text = "NO RESULT";
+    progressCircle->progressBar->visible = false;
   } else {
     int imageWidth = colorImageSnapshotPtr->image.cols;
     int imageHeight = colorImageSnapshotPtr->image.rows;
@@ -165,6 +171,7 @@ void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
       Rect objectRect(tl, br);
       Point objectPosition(tl);
       Point objectCenter((br - tl) / 2 + tl);
+      String objectName = msg->names[i];
       float objectDepth = ImageUtils::getPixel<float>(depthImageSnapshotPtr->image, objectCenter);
 
       int si = i * imageWidth * imageHeight;
@@ -182,21 +189,18 @@ void MaskNode::onMaskDetection(const mask_rcnn_ros::RectArrayConstPtr& msg) {
       cv::rectangle(masked_image, objectRect, randomColors[i]);
       cv::drawMarker(masked_image, objectCenter, Colors::BLACK, cv::MarkerTypes::MARKER_CROSS, 8);
 
-      abbp_mask::DepthPose prop;
-      prop.x = objectCenter.x;
-      prop.y = objectCenter.y;
-      prop.depth = objectDepth;
-      props.push_back(prop);
+      maskingResults.push_back(MaskResult::of(i + 1, objectName, objectCenter, objectDepth));
 
       ostringstream s;
-      s << "#" << i + 1 << " " << msg->names[i] << " (" << fixed << setprecision(3) << msg->likelihood[i] << ") ";
+      s << "#" << i + 1 << " " << objectName << " (" << fixed << setprecision(3) << msg->likelihood[i] << ") ";
       cv::putText(masked_image, s.str(), objectPosition + textOffset, cv::FONT_HERSHEY_SIMPLEX , 0.5, Colors::WHITE);
 
       ROS_INFO("  %s", s.str().c_str());
     }
+
+    progressCircle->visible = false;
   }
 
-  maskResultWindow->removeDrawable(progressCircle);
   maskImageView->set(masked_image);
   maskingDone = true;
 }
@@ -206,22 +210,25 @@ bool MaskNode::onMaskServiceCall(abbp_mask::DepthPoseService::Request& request, 
   ros::Rate rate(1);
   while (!maskingDone) {
     rate.sleep();
-    ROS_INFO("Waiting for mask..");
+    ROS_INFO_NAMED("DepthPoseService", "Waiting for mask..");
   }
-  
-  if (props.empty()) {
+
+  if (maskingResults.empty()) {
     response.success = false;
     return true;
   }
 
-  abbp_mask::DepthPose pose = props[0];
-  for (abbp_mask::DepthPose p : props) {
-    if (p.depth < pose.depth) {
-      pose = p;
+  MaskResult* closest = &maskingResults[0];
+  for (MaskResult p : maskingResults) {
+    if (p.pose.depth < closest->pose.depth) {
+      closest = &p;
     }
   }
+
+  ROS_INFO_STREAM_NAMED("DepthPoseService", "Returning closest object: #"
+      << closest->id << " (type: '" << closest->className << "', depth: " << closest->pose.depth << ")");
   response.success = true;
-  response.pose = pose;
+  response.pose = closest->pose;
   return true;
 }
 
@@ -232,9 +239,18 @@ void MaskNode::mask() {
   depthImageSnapshotPtr = depthImagePtr;
   objectImagePublisher.publish(colorImageSnapshotPtr->toImageMsg());
   ROS_INFO("  Published color image");
-  maskResultWindow->addDrawable(progressCircle);
-  Mat o;
+  if (progressCircle == nullptr) {
+    Size size = colorImagePtr->image.size();
+    Point center(size.width / 2, size.height / 2);
+    progressCircle = new IndeterminateOverlay("S..");
+    maskResultWindow->addDrawable(progressCircle);
+  }
+  progressCircle->overlay->label->text = "SEARCHING...";
+  progressCircle->visible = true;
+  progressCircle->progressBar->visible = true;
+  maskImageView->set(colorImageSnapshotPtr->image);
+  /*Mat o;
   colorImagePtr->image.copyTo(o);
   ImageUtils::simpleOverlay(o, "SEARCHING..");
-  maskImageView->set(o);
+  maskImageView->set(o);*/
 }
