@@ -64,6 +64,10 @@ class ABBPConfig(Config):
     # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 2
 
+    # IMAGE_CHANNEL_COUNT = 4
+    #
+    # MEAN_PIXEL =  np.array([123.7, 116.8, 103.9, 114.0])
+
 
 # Dataset class ABBPDataset(utils.Dataset):
 class ABBPDataset(utils.Dataset):
@@ -84,8 +88,8 @@ class ABBPDataset(utils.Dataset):
             annotation_generator.generate_annotations(dataset_dir)
 
         # Create annotations
-        if not os.path.isfile(os.path.join(dataset_dir, "annotations.json")):
-            annotation_generator.generate_annotations(dataset_dir)
+        # if not os.path.isfile(os.path.join(dataset_dir, "annotations.json")):
+        #     annotation_generator.generate_annotations(dataset_dir)
 
         # Load annotations
         annotations = json.load(open(os.path.join(dataset_dir, "annotations.json")))
@@ -132,6 +136,25 @@ class ABBPDataset(utils.Dataset):
 
     def image_reference(self, image_id):
         return self.image_info[image_id]
+
+
+def test():
+    # annotation_generator.generate_annotations("datasets/masks")
+
+    dataset = ABBPDataset()
+    dataset.load_object("datasets/images")
+    dataset.prepare()
+
+    img_info = dataset.image_info[0]
+
+    points = np.array(img_info['polygon']).transpose()
+
+    image = cv2.imread(img_info['path'])
+    cv2.polylines(image, [points], True, (255, 0, 0))
+
+    cv2.imshow('test', image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 def validate():
@@ -261,22 +284,24 @@ def inference(model):
             continue
 
         color_image = np.asanyarray(color_frame.get_data())
-        colorizer = rs.colorizer()
-        colorizer.set_option(rs.option.color_scheme, 2)
-
-        align = rs.align(rs.stream.color)
-        frameset = align.process(frames)
-
-        aligned_depth_frame = frameset.get_depth_frame()
-        colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
+        # colorizer = rs.colorizer()
+        # colorizer.set_option(rs.option.color_scheme, 2)
+        #
+        # align = rs.align(rs.stream.color)
+        # frameset = align.process(frames)
+        #
+        # aligned_depth_frame = frameset.get_depth_frame()
+        # colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
 
         # depth_gray = cv2.cvtColor(colorized_depth, cv2.COLOR_BGR2GRAY)
-        #
+
         # x, mask = cv2.threshold(depth_gray, 15, 255, cv2.THRESH_BINARY_INV)
-        #
+
         # dst = cv2.inpaint(depth_gray, mask, 3, cv2.INPAINT_NS)
+
+        # colorized_depth = cv2.cvtColor(colorized_depth, cv2.COLOR_RGB2GRAY)
         #
-        # dst = cv2.cvtColor(dst, cv2.COLOR_GRAY2RGB)
+        # combined_image = np.dstack((color_image, colorized_depth))
 
         inference_results = model.detect([color_image], verbose=1)
 
@@ -361,5 +386,9 @@ elif args.command == "validate":
     validate()
 elif args.command == "inference":
     inference(model)
+elif args.command == "image":
+    image(model)
+elif args.command == 'test':
+    test()
 else:
     print("'{}' is not recognized. Use 'train', 'validate' or 'inference'".format(args.command))
