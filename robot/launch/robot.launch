@@ -1,5 +1,5 @@
 <launch>
-  <arg name="driver" default="false"/>
+  <arg name="driver" default="true"/>
   <arg name="limited" default="false"/>
   <arg name="main" default="false"/>
 
