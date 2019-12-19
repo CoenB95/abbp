@@ -59,7 +59,7 @@ class ABBPConfig(Config):
     STEPS_PER_EPOCH = 100
 
     # Skip detections with < 90% confidence
-    DETECTION_MIN_CONFIDENCE = 0.9
+    DETECTION_MIN_CONFIDENCE = 0.7
 
     # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 2
@@ -160,7 +160,7 @@ def test():
 def validate():
     amount_correct = 0
 
-    for file in glob.glob("datasets/val_images3/color/*.png"):
+    for file in glob.glob("datasets/val_images/color/*.png"):
         img_array = cv2.imread(file)
 
         # Use model to predict classes from validation images
@@ -185,7 +185,7 @@ def validate():
             print("Wrong 😡")
 
     # Calculate correct percentage
-    accuracy = amount_correct / len(glob.glob("datasets/val_images3/color/*.png"))
+    accuracy = amount_correct / len(glob.glob("datasets/val_images/color/*.png"))
 
     print(accuracy)
 
@@ -279,29 +279,10 @@ def inference(model):
         # Wait for a coherent pair of frames: depth and color
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
-        depth_frame = frames.get_depth_frame()
-        if not color_frame or not depth_frame:
+        if not color_frame:
             continue
 
         color_image = np.asanyarray(color_frame.get_data())
-        # colorizer = rs.colorizer()
-        # colorizer.set_option(rs.option.color_scheme, 2)
-        #
-        # align = rs.align(rs.stream.color)
-        # frameset = align.process(frames)
-        #
-        # aligned_depth_frame = frameset.get_depth_frame()
-        # colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
-
-        # depth_gray = cv2.cvtColor(colorized_depth, cv2.COLOR_BGR2GRAY)
-
-        # x, mask = cv2.threshold(depth_gray, 15, 255, cv2.THRESH_BINARY_INV)
-
-        # dst = cv2.inpaint(depth_gray, mask, 3, cv2.INPAINT_NS)
-
-        # colorized_depth = cv2.cvtColor(colorized_depth, cv2.COLOR_RGB2GRAY)
-        #
-        # combined_image = np.dstack((color_image, colorized_depth))
 
         inference_results = model.detect([color_image], verbose=1)
 
