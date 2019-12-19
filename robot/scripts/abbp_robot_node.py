@@ -91,7 +91,7 @@ def main():
 
             robotMove(pose1)
             robotMove(neutralpose)
-            time.sleep(0.6)
+            time.sleep(1)
             print("Waiting for new coordinates")
             
             if (button == False): # Wanneer stopknop is ingedrukt, dan programma afsluiten
@@ -149,8 +149,8 @@ def pixelToRobotPos(pixelx, pixely, pixelz): # Vertalen pixelwaarden naar robotw
     return robotx, roboty, robotz
 
 def robotMove(pose):
-    v = 0.6
-    a = 0.4
+    v = 0.8
+    a = 0.6
     rob.movel(pose, acc=a, vel=v, wait=False)
     time.sleep(0.2)
     while True:
