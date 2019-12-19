@@ -11,7 +11,7 @@ import urx
 import numpy as np
 
 from io import StringIO
-from abbp_mask.msg import DepthPose
+from abbp_mask.srv import DepthPoseService
 from control_msgs.msg import FollowJointTrajectoryAction
 from math import pi
 from math import atan
@@ -47,21 +47,18 @@ Digital_In_States = [0,0,0,0,0,0,0,0,0,0]   #8(controller)+2(tool)
 def main():
 
     try:
-        global newdata
         global az, bz, axa, axb, bxa, bxb, aya, ayb, bya, byb
-        newdata = False
         weightsPath = "weights60.csv"
         az, bz, axa, axb, bxa, bxb, aya, ayb, bya, byb = loadWeigths(weightsPath)
 
         # Tool center point inladen, aanwijspunt is 106 mm lang
-        tcp = [0, 0, 0.111, 0, 0, 0]
+        tcp = [0, 0, 0.106, 0, 0, 0]
         rob.set_tcp(tcp)
         time.sleep(0.2) # Wanneer er een commando naar de robot gestuurd wordt, moet er een paar tienden van een seconden gewacht worden, zodat de robot het kan verwerken
 
         rospy.init_node('abbp_robot_node') # Node opstarten
         set_states() # IO states van de robot initialiseren
         rospy.Subscriber("/ur_driver/io_states", IOStates, IOStates_callback) # Subscribe op io states
-        rospy.Subscriber("/abbp_mask_node/object/pose", DepthPose, objectCallback) # Subscribe op eigenschappen van gedecteerd object, x y z
 
         # Programma starten
         print("Press the start button to start the program and move to the neutral pose")
@@ -74,24 +71,28 @@ def main():
 #/*================================ Start programma loop ========================================*/
         print("Waiting for new coordinates")
         while True:
-            if newdata == True: # wanneer de robot bezig is met een object aanwijzen, dan wordt nieuwe data niet geaccepteerd
-                newdata = False
-                xrobot, yrobot, zrobot = pixelToRobotPos(x, y, depth)
-                pose1 = [xrobot, yrobot, 0.270, 2.215, -2.215, 0]
-                poseobject = [xrobot, yrobot, zrobot, 2.215, -2.215, 0]
-                print("Received new coordinates")
-                print(poseobject)
-                # input("Press enter to continue")
+            rospy.wait_for_service('/abbp_mask_node/trigger_mask')
+            depthServiceHandle = rospy.ServiceProxy('/abbp_mask_node/trigger_mask', DepthPoseService) # Nieuwe foto maken en pixelwaarden van objecten opvragen
+            depthServiceResponse = depthServiceHandle()
+            if depthServiceResponse.success == False: # Wanneer er geen objecten meer in de bak zitten, stop het programma
+                print("No objects present, stopping program")
+                break
+            depthPose = depthServiceResponse.pose
+            xrobot, yrobot, zrobot = pixelToRobotPos(depthPose.x, depthPose.y, depthPose.depth)
+            pose1 = [xrobot, yrobot, 0.270, 2.215, -2.215, 0]
+            poseobject = [xrobot, yrobot, zrobot, 2.215, -2.215, 0]
+            
+            print("Received new coordinates")
+            print(poseobject)
                 
-                robotMove(pose1)
-                robotMove(poseobject)
+            robotMove(pose1)
+            robotMove(poseobject)
+            time.sleep(1)
 
-                input("Press enter to move away from object")
-
-                robotMove(pose1)
-                robotMove(neutralpose)
-                newdata = False
-                print("Waiting for new coordinates")
+            robotMove(pose1)
+            robotMove(neutralpose)
+            time.sleep(0.6)
+            print("Waiting for new coordinates")
             
             if (button == False): # Wanneer stopknop is ingedrukt, dan programma afsluiten
                 print("Stopping program")
@@ -128,18 +129,6 @@ def IOStates_callback(msg):
         button = False
         # print(button)
 
-def objectCallback(msg): # Uitlezen data van mask node 
-    global x
-    global y
-    global depth
-    global newdata
-    x = msg.x
-    y = msg.y
-    depth = msg.depth
-    newdata = True
-    # print (x)
-    # print (y)
-
 def pixelToRobotPos(pixelx, pixely, pixelz): # Vertalen pixelwaarden naar robotwaarden
 
     #pixelz function
@@ -160,8 +149,8 @@ def pixelToRobotPos(pixelx, pixely, pixelz): # Vertalen pixelwaarden naar robotw
     return robotx, roboty, robotz
 
 def robotMove(pose):
-    v = 0.3
-    a = 0.2
+    v = 0.6
+    a = 0.4
     rob.movel(pose, acc=a, vel=v, wait=False)
     time.sleep(0.2)
     while True:
