@@ -4,6 +4,7 @@ import numpy as np
 import skimage.io
 import json
 import cv2
+import glob
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 print("ROOT: " + str(ROOT_DIR))
@@ -30,6 +31,15 @@ IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "coco.h5")
+
+class_names = [
+    "BG",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+]
 
 
 # CONFIGURATION
@@ -124,42 +134,35 @@ class ABBPDataset(utils.Dataset):
         return self.image_info[image_id]
 
 
-def validate(model):
-    dataset_val = ABBPDataset()
-    dataset_val.load_object("datasets/val_images")
-    dataset_val.prepare()
-
+def validate():
     amount_correct = 0
 
-    for image in dataset_val.image_info:
-        print(image)
-
-        img_array = skimage.io.imread(image['path'], as_gray=True)
-
-        img_array = (img_array[:, :, np.newaxis])
-
-        # cv2.imshow("test", img_array)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+    for file in glob.glob("datasets/val_images3/color/*.png"):
+        img_array = cv2.imread(file)
 
         # Use model to predict classes from validation images
         results = model.detect([img_array], verbose=1)
 
         r = results[0]
 
+        idx = len(file.split('/'))
+        class_id = int(file.split('/')[idx - 1].split('-')[1].split('_')[0])
+
+
         print("Detected class id: " + str(r))
-        print("Real class id:   : " + str(image['class_id']))
-
-        # Check wether there is only 1  class detected (because every
-        # validation image only contains 1 object) and if the detected class is
-        # the same as the class retrieved from the annotations
-        if len(r['class_ids']) == 1 and image['class_id'] == r['class_ids'][0]:
+        print("Real class id:   : " + str(class_id))
+        #
+        # # Check wether there is only 1  class detected (because every
+        # # validation image only contains 1 object) and if the detected class is
+        # # the same as the class retrieved from the annotations
+        if len(r['class_ids']) == 1 and class_id == r['class_ids'][0]:
             amount_correct += 1
-            print("Correct")
-
+            print("Correct 👌")
+        else:
+            print("Wrong 😡")
 
     # Calculate correct percentage
-    accuracy = amount_correct / len(dataset_val.image_info) * 100
+    accuracy = amount_correct / len(glob.glob("datasets/val_images3/color/*.png"))
 
     print(accuracy)
 
@@ -237,16 +240,8 @@ def train(model):
                 epochs=30,
                 layers='heads')
 
-def inference(model):
-    class_names = [
-        "BG",
-        "one",
-        "two",
-        "three",
-        "four",
-        "five"
-    ]
 
+def inference(model):
     pipeline = rs.pipeline()
     config = rs.config()
     config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
@@ -266,16 +261,14 @@ def inference(model):
             continue
 
         color_image = np.asanyarray(color_frame.get_data())
+        colorizer = rs.colorizer()
+        colorizer.set_option(rs.option.color_scheme, 2)
 
-        # colorizer = rs.colorizer()
-        # colorizer.set_option(rs.option.color_scheme, 2)
-        # colorized_depth = np.asanyarray(colorizer.colorize(depth_frame).get_data())
+        align = rs.align(rs.stream.color)
+        frameset = align.process(frames)
 
-        # align = rs.align(rs.stream.color)
-        # frameset = align.process(frames)
-
-        # aligned_depth_frame = frameset.get_depth_frame()
-        # colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
+        aligned_depth_frame = frameset.get_depth_frame()
+        colorized_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
 
         # depth_gray = cv2.cvtColor(colorized_depth, cv2.COLOR_BGR2GRAY)
         #
@@ -290,8 +283,11 @@ def inference(model):
         # Display results
         r = inference_results[0]
         print(r['class_ids'])
-        result_image = visualize_mask(color_image, r['rois'], r['masks'], r['class_ids'],
-                               class_names, r['scores'], title="Predictions")
+        result_image = visualize_mask(color_image,
+                                      r['rois'], r['masks'],
+                                      r['class_ids'],
+                                      class_names, r['scores'],
+                                      title="Predictions")
 
         # Show images
         cv2.imshow('RealSense', result_image)
@@ -304,16 +300,6 @@ def inference(model):
 
 
 def image(model):
-    class_names = [
-        "BG",
-        "one",
-        "two",
-        "three",
-        "four",
-        "five",
-        "six"
-    ]
-
     image = cv2.imread("img.png")
 
     results = model.detect([image], verbose=1)
@@ -325,39 +311,6 @@ def image(model):
     cv2.imshow('dst', image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-
-
-def validate(model):
-    dataset_val = ABBPDataset()
-    dataset_val.load_object("datasets/val_images")
-    dataset_val.prepare()
-
-    amount_correct = 0
-
-    for image in dataset_val.image_info:
-        print(image)
-
-        img_array = cv2.imread(image['path'])
-
-        # Use model to predict classes from validation images
-        results = model.detect([img_array], verbose=1)
-
-        r = results[0]
-
-        print("Detected class id: " + str(r))
-        print("Real class id:   : " + str(image['class_id']))
-
-        # Check wether there is only 1  class detected (because every
-        # validation image only contains 1 object) and if the detected class is
-        # the same as the class retrieved from the annotations
-        if len(r['class_ids']) == 1 and image['class_id'] == r['class_ids'][0]:
-            amount_correct += 1
-            print("Correct")
-
-    # Calculate correct percentage
-    accuracy = amount_correct / len(dataset_val.image_info) * 100
-
-    print(accuracy)
 
 
 import argparse
@@ -405,7 +358,7 @@ else:
 if args.command == "train":
     train(model)
 elif args.command == "validate":
-    validate(model)
+    validate()
 elif args.command == "inference":
     inference(model)
 else:
