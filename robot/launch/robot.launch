@@ -13,7 +13,7 @@
 
   <!-- Main ABBP Robot node -->
   <group if="$(arg main)">
-    <node pkg="abbp_robot" type="abbp_robot_node" name="abbp_robot_node.py" output="screen"/>
+    <node pkg="abbp_robot" type="abbp_robot_node.py" name="abbp_robot_node" output="screen"/>
   </group>
 
 </launch>

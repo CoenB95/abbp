@@ -1,3 +1,5 @@
+math3d
+urx
 numpy
 scipy
 Pillow

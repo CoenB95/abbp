@@ -9,6 +9,7 @@ import sys
 import time
 import urx
 import numpy as np
+import os
 
 from io import StringIO
 from abbp_mask.srv import DepthPoseService
@@ -48,7 +49,7 @@ def main():
 
     try:
         global az, bz, axa, axb, bxa, bxb, aya, ayb, bya, byb
-        weightsPath = "weights60.csv"
+        weightsPath = os.path.dirname(os.path.realpath(__file__)) + "/weights60.csv"
         az, bz, axa, axb, bxa, bxb, aya, ayb, bya, byb = loadWeigths(weightsPath)
 
         # Tool center point inladen, aanwijspunt is 106 mm lang
