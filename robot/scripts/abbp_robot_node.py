@@ -52,8 +52,8 @@ def main():
         weightsPath = os.path.dirname(os.path.realpath(__file__)) + "/weights60.csv"
         az, bz, axa, axb, bxa, bxb, aya, ayb, bya, byb = loadWeigths(weightsPath)
 
-        # Tool center point inladen, aanwijspunt is 106 mm lang
-        tcp = [0, 0, 0.106, 0, 0, 0]
+        # Tool center point inladen, aanwijspunt is 106 mm lang (4 mm speling)
+        tcp = [0, 0, 0.110, 0, 0, 0]
         rob.set_tcp(tcp)
         time.sleep(0.2) # Wanneer er een commando naar de robot gestuurd wordt, moet er een paar tienden van een seconden gewacht worden, zodat de robot het kan verwerken
 
