@@ -63,3 +63,8 @@ add line `source $ROS_WS/devel/setup.bash`
 ## ABBP
 **`cd $ROS_WS/src`**  
 `git clone https://github.com/telbir/abbp.git`  
+
+## Running programs
+1st: roslaunch abbp_mask mask.launch
+2nd: roslaunch abbp_robot robot.launch limited:=true main:=true
+Make sure the robot ip in appb_robot_node.py and robot.launch files are correct
